@@ -1,0 +1,20 @@
+[package]
+name = "bs2-cli"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "cli"
+path = "src/main.rs"
+
+[dependencies]
+log = "0.4.14"
+rand_core = "0.6.4"
+rand_xorshift = "0.3"
+hex = "0.4.3"
+clap = { version = "=4.2.1", features = ["derive", "env"] }
+anyhow = "1.0"
+chrono = "0.4.23"
+
+[features]
+super = []
