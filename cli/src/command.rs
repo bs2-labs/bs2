@@ -15,16 +15,16 @@ pub enum Commands {
 
 #[derive(Args)]
 pub struct RunArgs {
-    #[arg(short, long)]
-    pub calldata: Option<String>,
-    #[arg(short, long)]
-    pub bytecode: Option<String>,
-    #[arg(short, long)]
-    pub hardcode: Option<String>,
-    #[arg(short, long)]
-    pub file: Option<String>,
-    #[arg(short, long)]
-    pub dry_run: bool,
+    // #[arg(short, long)]
+    // pub calldata: Option<String>,
+    // #[arg(short, long)]
+    // pub bytecode: Option<String>,
+    // #[arg(short, long)]
+    // pub hardcode: Option<String>,
+    // #[arg(short, long)]
+    // pub file: Option<String>,
+    // // #[arg(short, long)]
+    // // pub dry_run: bool,
 }
 
 pub fn match_operation(cli: &Cli) {
