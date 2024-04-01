@@ -1,6 +1,9 @@
 use runtime::trace::{InstructionType, Opcode, Step};
 
 use core::fmt::Error;
+use std::io::{Cursor, Seek, SeekFrom};
+
+use byteorder::{LittleEndian, WriteBytesExt};
 
 /// Marker that defines whether an Operation performs a `READ` or a `WRITE`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -42,66 +45,97 @@ pub struct RwMemoryOp {
     /// Memory address
     pub address: u64,
     /// Value
-    pub value: u8,
+    pub value: u64,
+    /// Width
+    pub width: u8,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RwContainer {
     /// Operations of memory and register
     pub rw_memory_ops: Vec<RwMemoryOp>,
     /// Operations of memory and register
     pub rw_register_ops: Vec<RwRegisterOp>,
+    /// Memory values to faciliate the memory operations
+    /// Default to 32MB memory as ckb-vm may have flexible memory size.
+    pub memory_values: Vec<u8>,
+
+    /// Temporary register to store the counter for operations within an instruction.
+    pub rwc: u64,
+}
+
+impl Default for RwContainer {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl RwContainer {
     pub fn new() -> Self {
-        Default::default()
+        Self {
+            rw_memory_ops: Vec::new(),
+            rw_register_ops: Vec::new(),
+            memory_values: [0; 1024 * 1024 * 32].to_vec(),
+            rwc: 0,
+        }
     }
 
     pub fn update_pc_register(&mut self, _gc: u64, _value: u64) {
         // TODO: save pc register in a separated table.
     }
 
-    pub fn push_read_register_op(&mut self, gc: u64, rwc: u64, index: u64, value: u64) {
+    pub fn read_register(&mut self, gc: u64, index: u64, value: u64) {
         let read_op = RwRegisterOp {
             global_clk: gc,
-            rwc,
+            rwc: self.rwc,
             rw: RW::READ,
             index,
             value,
         };
         self.rw_register_ops.push(read_op);
+        self.rwc += 1;
     }
 
-    pub fn push_write_register_op(&mut self, gc: u64, rwc: u64, index: u64, value: u64) {
+    pub fn write_register(&mut self, gc: u64, index: u64, value: u64) {
         let write_op = RwRegisterOp {
             global_clk: gc,
-            rwc,
+            rwc: self.rwc,
             rw: RW::WRITE,
             index,
             value,
         };
         self.rw_register_ops.push(write_op);
+        self.rwc += 1;
     }
 
-    pub fn push_read_memory_op(&mut self, gc: u64, address: u64, value: u8) {
+    pub fn read_memory(&mut self, gc: u64, address: u64, value: u64, width: u8) {
         let read_op = RwMemoryOp {
             global_clk: gc,
             rw: RW::READ,
             address,
             value,
+            width,
         };
         self.rw_memory_ops.push(read_op);
     }
 
-    pub fn push_write_memory_op(&mut self, gc: u64, memory: u64, value: u8) {
+    pub fn write_memory(&mut self, gc: u64, address: u64, value: u64, width: u8) {
         let write_op = RwMemoryOp {
             global_clk: gc,
             rw: RW::WRITE,
-            address: memory,
+            address,
             value,
+            width,
         };
         self.rw_memory_ops.push(write_op);
+        let mut writer = Cursor::new(&mut self.memory_values);
+        writer.seek(SeekFrom::Start(address)).unwrap();
+        match width {
+            8 => writer.write_u8(value as u8).unwrap(),
+            16 => writer.write_u16::<LittleEndian>(value as u16).unwrap(),
+            32 => writer.write_u32::<LittleEndian>(value as u32).unwrap(),
+            _ => panic!("Not implemented {:?}", width),
+        }
     }
 
     pub fn step_rtype(&mut self, step: &Step) -> Result<(), Error> {
@@ -204,22 +238,51 @@ impl RwContainer {
             _ => unimplemented!("Not implemented {:?}", step.instruction.opcode),
         };
         // read rs1
-        self.push_read_register_op(step.global_clk, 0, step.instruction.op_b, b);
+        self.read_register(step.global_clk, step.instruction.op_b, b);
 
         // read rs2
-        self.push_read_register_op(step.global_clk, 1, step.instruction.op_c, c);
+        self.read_register(step.global_clk, step.instruction.op_c, c);
 
         // write rd
-        self.push_write_register_op(step.global_clk, 2, step.instruction.op_a, result);
+        self.write_register(step.global_clk, step.instruction.op_a, result);
 
         Ok(())
     }
 
-    pub fn step_btype(&mut self, step: &Step) -> Result<(), Error> {
-        let opcode = step.instruction.opcode;
+    pub fn step_stype_or_btype(&mut self, step: &Step) -> (u64, u64, u64) {
         let rs1 = step.registers[step.instruction.op_a as usize];
         let rs2 = step.registers[step.instruction.op_b as usize];
         let imm = step.registers[step.instruction.op_c as usize];
+        self.read_register(step.global_clk, step.instruction.op_a, rs1);
+        self.read_register(step.global_clk, step.instruction.op_b, rs2);
+        (rs1, rs2, imm)
+    }
+
+    pub fn step_stype(&mut self, step: &Step) -> Result<(), Error> {
+        let (rs1, rs2, imm) = self.step_stype_or_btype(step);
+        let opcode = step.instruction.opcode;
+
+        let (addr, _) = (rs1 as i64).overflowing_add(imm as i64);
+        let addr = addr as u64;
+        let value = rs2;
+        match opcode {
+            Opcode::SB => {
+                self.write_memory(step.global_clk, addr, value, 8);
+            }
+            Opcode::SH => {
+                self.write_memory(step.global_clk, addr, value, 16);
+            }
+            Opcode::SW => {
+                self.write_memory(step.global_clk, addr, value, 32);
+            }
+            _ => panic!("Not implemented {:?}", step.instruction.opcode),
+        }
+        Ok(())
+    }
+
+    pub fn step_btype(&mut self, step: &Step) -> Result<(), Error> {
+        let (rs1, rs2, imm) = self.step_stype_or_btype(step);
+        let opcode = step.instruction.opcode;
 
         let new_pc = if match opcode {
             Opcode::BEQ => rs1 as i64 == rs2 as i64,
@@ -234,20 +297,18 @@ impl RwContainer {
         } else {
             step.pc + step.instruction.get_instruction_length() as u64
         };
-        self.push_read_register_op(step.global_clk, step.instruction.op_a, 0, rs1);
-
-        self.push_read_register_op(step.global_clk, step.instruction.op_b, 1, rs2);
-
         self.update_pc_register(step.global_clk, new_pc);
 
         Ok(())
     }
 
     pub fn step(&mut self, step: &Step) -> Result<(), Error> {
+        self.rwc = 0;
         let opcode = step.instruction.opcode;
         match opcode.into() {
             InstructionType::RType => self.step_rtype(step),
             InstructionType::BType => self.step_btype(step),
+            InstructionType::SType => self.step_stype(step),
             _ => {
                 unimplemented!("Not implemented {:?}", step.instruction.opcode);
             }
@@ -257,7 +318,6 @@ impl RwContainer {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::builder::EntryBuilder;
     use crate::rw_container::{RwRegisterOp, RW};
     use runtime::trace::Trace;
@@ -292,33 +352,30 @@ mod tests {
         builder.build(&trace).expect("build entries failed");
 
         assert_eq!(
-            builder.rw_container,
-            RwContainer {
-                rw_register_ops: vec![
-                    RwRegisterOp {
-                        global_clk: 0,
-                        rwc: 0,
-                        rw: RW::READ,
-                        index: 1,
-                        value: 0
-                    },
-                    RwRegisterOp {
-                        global_clk: 0,
-                        rwc: 1,
-                        rw: RW::READ,
-                        index: 3,
-                        value: 0
-                    },
-                    RwRegisterOp {
-                        global_clk: 0,
-                        rwc: 2,
-                        rw: RW::WRITE,
-                        index: 31,
-                        value: 0
-                    }
-                ],
-                ..Default::default()
-            }
+            builder.rw_container.rw_register_ops,
+            vec![
+                RwRegisterOp {
+                    global_clk: 0,
+                    rwc: 0,
+                    rw: RW::READ,
+                    index: 1,
+                    value: 0
+                },
+                RwRegisterOp {
+                    global_clk: 0,
+                    rwc: 1,
+                    rw: RW::READ,
+                    index: 3,
+                    value: 0
+                },
+                RwRegisterOp {
+                    global_clk: 0,
+                    rwc: 2,
+                    rw: RW::WRITE,
+                    index: 31,
+                    value: 0
+                }
+            ],
         );
     }
 
@@ -352,33 +409,30 @@ mod tests {
         builder.build(&trace).expect("build entries failed");
 
         assert_eq!(
-            builder.rw_container,
-            RwContainer {
-                rw_register_ops: vec![
-                    RwRegisterOp {
-                        global_clk: 0,
-                        rwc: 0,
-                        rw: RW::READ,
-                        index: 1,
-                        value: 0
-                    },
-                    RwRegisterOp {
-                        global_clk: 0,
-                        rwc: 1,
-                        rw: RW::READ,
-                        index: 3,
-                        value: 0
-                    },
-                    RwRegisterOp {
-                        global_clk: 0,
-                        rwc: 2,
-                        rw: RW::WRITE,
-                        index: 31,
-                        value: 0
-                    }
-                ],
-                ..Default::default()
-            }
+            builder.rw_container.rw_register_ops,
+            vec![
+                RwRegisterOp {
+                    global_clk: 0,
+                    rwc: 0,
+                    rw: RW::READ,
+                    index: 1,
+                    value: 0
+                },
+                RwRegisterOp {
+                    global_clk: 0,
+                    rwc: 1,
+                    rw: RW::READ,
+                    index: 3,
+                    value: 0
+                },
+                RwRegisterOp {
+                    global_clk: 0,
+                    rwc: 2,
+                    rw: RW::WRITE,
+                    index: 31,
+                    value: 0
+                }
+            ],
         );
     }
 }
