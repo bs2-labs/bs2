@@ -1,4 +1,5 @@
 use crate::exec::run::exec_run;
+use circuits::prove;
 use clap::{command, Args, Parser, Subcommand};
 
 #[derive(Parser)]
@@ -34,6 +35,7 @@ pub fn match_operation(cli: &Cli) {
         }
         Commands::Prove(_args) => {
             println!("create proof");
+            prove();
         }
     }
 }
