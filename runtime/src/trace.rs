@@ -338,6 +338,12 @@ pub struct Instruction {
     pub imm_c: bool,
 }
 
+impl Instruction {
+    pub fn get_instruction_length(&self) -> usize {
+        4
+    }
+}
+
 #[derive(Deserialize, Serialize, Clone, Debug, Eq, PartialEq)]
 pub struct Step {
     pub global_clk: u64,

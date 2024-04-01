@@ -58,6 +58,10 @@ impl RwContainer {
         Default::default()
     }
 
+    pub fn update_pc_register(&mut self, _gc: u64, _value: u64) {
+        // TODO: save pc register in a separated table.
+    }
+
     pub fn push_read_register_op(&mut self, gc: u64, rwc: u64, index: u64, value: u64) {
         let read_op = RwRegisterOp {
             global_clk: gc,
@@ -122,29 +126,28 @@ impl RwContainer {
 
     pub fn step_btype(&mut self, step: &Step) -> Result<(), Error> {
         let opcode = step.instruction.opcode;
-        // read rs1
-        self.push_read_register_op(
-            step.global_clk,
-            step.instruction.op_b,
-            0,
-            step.registers[step.instruction.op_b as usize],
-        );
+        let rs1 = step.registers[step.instruction.op_a as usize];
+        let rs2 = step.registers[step.instruction.op_b as usize];
+        let imm = step.registers[step.instruction.op_c as usize];
 
-        // read rs2
-        self.push_read_register_op(
-            step.global_clk,
-            step.instruction.op_c,
-            1,
-            step.registers[step.instruction.op_c as usize],
-        );
+        let new_pc = if match opcode {
+            Opcode::BEQ => rs1 as i64 == rs2 as i64,
+            Opcode::BNE => rs1 as i64 != rs2 as i64,
+            Opcode::BGE => rs1 as i64 >= rs2 as i64,
+            Opcode::BGEU => rs1 as u64 >= rs2 as u64,
+            Opcode::BLT => (rs1 as i64) < (rs2 as i64),
+            Opcode::BLTU => (rs1 as u64) < (rs2 as u64),
+            _ => unimplemented!("Not implemented {:?}", step.instruction.opcode),
+        } {
+            step.pc + imm as u64
+        } else {
+            step.pc + step.instruction.get_instruction_length() as u64
+        };
+        self.push_read_register_op(step.global_clk, step.instruction.op_a, 0, rs1);
 
-        // write rd
-        self.push_write_register_op(
-            step.global_clk,
-            step.instruction.op_a,
-            2,
-            step.registers[step.instruction.op_a as usize],
-        );
+        self.push_read_register_op(step.global_clk, step.instruction.op_b, 1, rs2);
+
+        self.update_pc_register(step.global_clk, new_pc);
 
         Ok(())
     }
