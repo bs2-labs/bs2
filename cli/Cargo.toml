@@ -16,7 +16,9 @@ clap = { version = "=4.2.1", features = ["derive", "env"] }
 anyhow = "1.0"
 chrono = "0.4.23"
 
-runtime ={ path = "../runtime" }
+runtime = { path = "../runtime" }
+entry_builder = { path = "../entry_builder" }
+
 
 [features]
 super = []

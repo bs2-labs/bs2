@@ -1,9 +1,8 @@
 use serde::{Deserialize, Serialize};
-use std::fmt::Display;
 use std::vec::Vec;
 
 // TODO: relay on ckb opcode
-type Opcode = u32;
+pub type Opcode = u32;
 
 // TODO: use enum
 type InstructionType = u32;
@@ -12,9 +11,9 @@ type InstructionType = u32;
 #[derive(Deserialize, Serialize, Clone, Debug, Eq, PartialEq)]
 pub struct Instruction {
     pub opcode: Opcode,
-    pub op_a: u32,
-    pub op_b: u32,
-    pub op_c: u32,
+    pub op_a: u64,
+    pub op_b: u64,
+    pub op_c: u64,
     pub imm_b: bool,
     pub imm_c: bool,
 }
@@ -49,24 +48,23 @@ mod tests {
           "failed": false,
           "returnValue": "0",
           "steps": [
-                    {
-                      "global_clk": 0,
-                      "pc": 65772,
-                      "inst_type": 0,
-                      "instruction": {
-                              "opcode": 35,
-                              "op_a": 31,
-                              "op_b": 1,
-                              "op_c": 3,
-                              "imm_b": true,
-                              "imm_c": true
-                      },
-                      "registers": [ 0, 0, 494288, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
-                    }
-                  ]
-          }"#;
-        let trace: Trace = serde_json::from_str(trace_json).expect("json-deserialize Trace");
-
+              {
+                "global_clk": 0,
+                "pc": 65772,
+                "inst_type": 0,
+                "instruction": {
+                        "opcode": 35,
+                        "op_a": 31,
+                        "op_b": 1,
+                        "op_c": 3,
+                        "imm_b": true,
+                        "imm_c": true
+                },
+                "registers": [ 0, 0, 494288, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
+              }
+          ]
+        }"#;
+        let trace: Trace = serde_json::from_str(trace_json).expect("json-deserialize Trace failed");
         assert_eq!(
             trace,
             Trace {
@@ -85,7 +83,10 @@ mod tests {
                         imm_b: true,
                         imm_c: true,
                     },
-                    registers: vec![0, 0, 494288, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    registers: vec![
+                        0, 0, 494288, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0, 0
+                    ],
                 }]
             }
         )
