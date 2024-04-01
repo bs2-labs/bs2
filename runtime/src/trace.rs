@@ -55,8 +55,21 @@ pub enum Opcode {
     REM = 36,
     REMU = 37,
 
+    LUI = 38,
+
+    ADDI = 39,
+    SLTI = 40,
+    SLTIU = 41,
+    XORI = 42,
+    ORI = 43,
+    ANDI = 44,
+    SLLI = 45,
+    SRLI = 46,
+    SRAI = 47,
+
+    FENCE = 48,
     // Miscellaneaous instructions.
-    UNIMP = 39,
+    UNIMP = 255,
 }
 
 impl From<u16> for Opcode {
@@ -99,7 +112,19 @@ impl From<u16> for Opcode {
             35 => Opcode::DIVU,
             36 => Opcode::REM,
             37 => Opcode::REMU,
-            39 => Opcode::UNIMP,
+            38 => Opcode::LUI,
+            39 => Opcode::ADDI,
+            40 => Opcode::SLTI,
+            41 => Opcode::SLTIU,
+            42 => Opcode::XORI,
+            43 => Opcode::ORI,
+            44 => Opcode::ANDI,
+            45 => Opcode::SLLI,
+            46 => Opcode::SRLI,
+            47 => Opcode::SRAI,
+            48 => Opcode::FENCE,
+
+            255 => Opcode::UNIMP,
             _ => panic!("Invalid opcode value"),
         }
     }
@@ -145,6 +170,18 @@ impl Opcode {
             "DIVU" => Some(Opcode::DIVU),
             "REM" => Some(Opcode::REM),
             "REMU" => Some(Opcode::REMU),
+            "LUI" => Some(Opcode::LUI),
+            "ADDI" => Some(Opcode::ADDI),
+            "SLTI" => Some(Opcode::SLTI),
+            "SLTIU" => Some(Opcode::SLTIU),
+            "XORI" => Some(Opcode::XORI),
+            "ORI" => Some(Opcode::ORI),
+            "ANDI" => Some(Opcode::ANDI),
+            "SLLI" => Some(Opcode::SLLI),
+            "SRLI" => Some(Opcode::SRLI),
+            "SRAI" => Some(Opcode::SRAI),
+            "FENCE" => Some(Opcode::FENCE),
+
             "UNIMP" => Some(Opcode::UNIMP),
             _ => None,
         }
@@ -195,6 +232,17 @@ impl Serialize for Opcode {
             Opcode::REM => "REM",
             Opcode::REMU => "REMU",
             Opcode::UNIMP => "UNIMP",
+            Opcode::LUI => "LUI",
+            Opcode::ADDI => "ADDI",
+            Opcode::SLTI => "SLTI",
+            Opcode::SLTIU => "SLTIU",
+            Opcode::XORI => "XORI",
+            Opcode::ORI => "ORI",
+            Opcode::ANDI => "ANDI",
+            Opcode::SLLI => "SLLI",
+            Opcode::SRLI => "SRLI",
+            Opcode::SRAI => "SRAI",
+            Opcode::FENCE => "FENCE",
         })
     }
 }
@@ -218,11 +266,46 @@ impl<'de> Deserialize<'de> for Opcode {
 impl Opcode {
     fn instruction_type(&self) -> InstructionType {
         match self {
-            Opcode::ADD | Opcode::SUB => InstructionType::RType,
+            Opcode::ADD
+            | Opcode::SUB
+            | Opcode::SLL
+            | Opcode::SLT
+            | Opcode::SLTU
+            | Opcode::XOR
+            | Opcode::SRL
+            | Opcode::SRA
+            | Opcode::OR
+            | Opcode::AND
+            | Opcode::MUL
+            | Opcode::MULH
+            | Opcode::MULHU
+            | Opcode::MULHSU
+            | Opcode::DIV
+            | Opcode::DIVU
+            | Opcode::REM
+            | Opcode::REMU => InstructionType::RType,
             Opcode::BEQ | Opcode::BNE | Opcode::BGE | Opcode::BGEU | Opcode::BLT | Opcode::BLTU => {
                 InstructionType::BType
             }
-            _ => unimplemented!("Instruction type not implemented for opcode {:?}", self),
+            Opcode::JAL | Opcode::LB | Opcode::LH | Opcode::LW | Opcode::LBU | Opcode::LHU => {
+                InstructionType::JType
+            }
+            Opcode::JALR
+            | Opcode::ADDI
+            | Opcode::SLTI
+            | Opcode::SLTIU
+            | Opcode::XORI
+            | Opcode::ORI
+            | Opcode::ANDI
+            | Opcode::SLLI
+            | Opcode::SRLI
+            | Opcode::SRAI => InstructionType::IType,
+            Opcode::LUI | Opcode::AUIPC => InstructionType::UType,
+            Opcode::SB | Opcode::SH | Opcode::SW => InstructionType::SType,
+
+            Opcode::FENCE => InstructionType::NOTYPE,
+            Opcode::ECALL | Opcode::EBREAK => InstructionType::NOTYPE,
+            Opcode::UNIMP => InstructionType::NOTYPE,
         }
     }
 }
@@ -241,6 +324,7 @@ pub enum InstructionType {
     BType,
     UType,
     JType,
+    NOTYPE,
 }
 
 /// An instruction specifies an operation to execute and the operands.

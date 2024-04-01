@@ -4,6 +4,12 @@ use crate::opcodes::RwContainer;
 use core::fmt::Error;
 use runtime::trace::Step;
 
+/// https://github.com/succinctlabs/sp1/blob/f0154158bab6e86dfa7520fbe2565c5a60897609/core/src/disassembler/instruction.rs#L57
+/// rs1 is stored in op_a
+/// rs2 is stored in op_b
+/// rd is stored in op
+/// 
+
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct BType;
 

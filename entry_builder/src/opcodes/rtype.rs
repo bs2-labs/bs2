@@ -1,7 +1,6 @@
 use crate::opcodes::OpcodeFn;
 use crate::opcodes::RwContainer;
 
-
 use core::fmt::Error;
 use runtime::trace::Step;
 
@@ -10,7 +9,6 @@ pub(crate) struct RType;
 
 impl OpcodeFn for RType {
     fn gen_associated_ops(rw_contaienr: &mut RwContainer, step: &Step) -> Result<(), Error> {
-        // read rs1
         rw_contaienr.push_read_op(
             step.global_clk,
             step.instruction.op_b,
@@ -39,7 +37,7 @@ impl OpcodeFn for RType {
 mod tests {
     use super::*;
     use crate::builder::EntryBuilder;
-    use crate::rw_container::{RW, RwOp};
+    use crate::rw_container::{RwOp, RW};
     use runtime::trace::Trace;
 
     #[test]
