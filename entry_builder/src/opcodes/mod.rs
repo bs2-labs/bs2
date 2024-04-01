@@ -1,5 +1,7 @@
+use runtime::trace::InstructionType;
 use runtime::trace::Step;
 use runtime::trace::Opcode;
+use std::f32::INFINITY;
 use std::fmt::Debug;
 use core::fmt::Error;
 use crate::rw_container::RwContainer;
@@ -40,9 +42,10 @@ type FnGenAssociatedOps = fn(
 // U-type : lui rd, imm
 // J-type : jal rd, offset
 fn fn_gen_associated_ops(opcode: Opcode) -> FnGenAssociatedOps {
-    match opcode {
+    let inst_type = opcode.into();
+    match inst_type {
         // TODO: use ckb opcode 
-        35 => RType::gen_associated_ops,
+        InstructionType::RType => RType::gen_associated_ops,
         _ => {
             log::debug!("Using dummy gen_associated_ops for opcode {:?}", opcode);
             Dummy::gen_associated_ops

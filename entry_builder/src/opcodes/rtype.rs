@@ -53,9 +53,9 @@ mod tests {
               {
                 "global_clk": 0,
                 "pc": 65772,
-                "inst_type": 0,
+                "inst_type": "RType",
                 "instruction": {
-                        "opcode": 35,
+                        "opcode": "ADD",
                         "op_a": 31,
                         "op_b": 1,
                         "op_c": 3,
