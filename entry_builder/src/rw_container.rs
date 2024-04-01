@@ -145,53 +145,31 @@ impl RwContainer {
         let result = match opcode {
             Opcode::ADD => rs1_value + rs2_value,
             Opcode::SUB => rs1_value - rs2_value,
-            Opcode::SLL => {
-                let shift_value = rs2_value.clone() & SHIFT_MASK;
-                rs1_value.clone() << shift_value
-            },
-            Opcode::SRL => {
-                let shift_value = rs2_value.clone() & SHIFT_MASK;
-                rs1_value.clone() >> shift_value
-            },
-            Opcode::SRA => {
-                rs1_value.clone() >> rs2_value
-            },
-            Opcode::SLT => {
-                (rs1_value < rs2_value).into()
-            },
-            Opcode::SLTU => {
-                (rs1_value < rs2_value).into()
-            },
-            Opcode::XOR => {
-                rs1_value ^ rs2_value
-            },
-            Opcode::OR => {
-                rs1_value | rs2_value
-            },
-            Opcode::AND => {
-                rs1_value & rs2_value
-            },
-            Opcode::MUL => {
-                rs1_value.overflowing_mul(rs2_value).0
-            },
+            Opcode::SRA => rs1_value.clone() >> rs2_value,
+            Opcode::SLT => (rs1_value < rs2_value).into(),
+            Opcode::SLTU => (rs1_value < rs2_value).into(),
+            Opcode::XOR => rs1_value ^ rs2_value,
+            Opcode::OR => rs1_value | rs2_value,
+            Opcode::AND => rs1_value & rs2_value,
+            Opcode::MUL => rs1_value.overflowing_mul(rs2_value).0,
             Opcode::MULH => {
                 let a = i128::from(rs1_value as i64);
                 let b = i128::from(rs2_value as i64);
                 let (value, _) = a.overflowing_mul(b);
                 (value >> 64) as u64
-            },
+            }
             Opcode::MULHU => {
                 let a = u128::from(rs1_value);
                 let b = u128::from(rs2_value);
                 let (value, _) = a.overflowing_mul(b);
                 (value >> 64) as u64
-            },
+            }
             Opcode::MULHSU => {
                 let a = i128::from(rs1_value as i64);
                 let b = i128::from(rs2_value);
                 let (value, _) = a.overflowing_mul(b);
                 (value >> 64) as u64
-            },
+            }
             Opcode::DIV => {
                 // rs1_value.overflowing_div_signed(rs2_value);
                 if rs1_value == 0 {
@@ -199,7 +177,7 @@ impl RwContainer {
                 } else {
                     rs1_value.overflowing_div(rs2_value).0
                 }
-            },
+            }
             Opcode::DIVU => {
                 // rs1_value.overflowing_div(rs2_value);
                 if rs2_value == 0 {
@@ -213,7 +191,7 @@ impl RwContainer {
                         v as u64
                     }
                 }
-            },
+            }
             Opcode::REM => {
                 // rs1_value.overflowing_rem_signed(rs2_value);
                 if rs2_value == 0 {
@@ -221,7 +199,7 @@ impl RwContainer {
                 } else {
                     (rs1_value).overflowing_rem(rs2_value).0
                 }
-            },
+            }
             Opcode::REMU => {
                 // rs1_value.overflowing_rem(rs2_value);
                 if rs2_value == 0 {
@@ -234,14 +212,14 @@ impl RwContainer {
                         v as u64
                     }
                 }
-            },
+            }
             _ => unimplemented!("Not implemented {:?}", step.instruction.opcode),
         };
         // read rs1
-        self.read_register(step.global_clk, step.instruction.op_b, b);
+        self.read_register(step.global_clk, step.instruction.op_b, rs1_value);
 
         // read rs2
-        self.read_register(step.global_clk, step.instruction.op_c, c);
+        self.read_register(step.global_clk, step.instruction.op_c, rs2_value);
 
         // write rd
         self.write_register(step.global_clk, step.instruction.op_a, result);
