@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::{vec::Vec};
+use std::vec::Vec;
 
 // TODO: relay on ckb opcode
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -219,7 +219,9 @@ impl Opcode {
     fn instruction_type(&self) -> InstructionType {
         match self {
             Opcode::ADD | Opcode::SUB => InstructionType::RType,
-            Opcode::BEQ | Opcode::BGE => InstructionType::BType,
+            Opcode::BEQ | Opcode::BNE | Opcode::BGE | Opcode::BGEU | Opcode::BLT | Opcode::BLTU => {
+                InstructionType::BType
+            }
             _ => unimplemented!("Instruction type not implemented for opcode {:?}", self),
         }
     }

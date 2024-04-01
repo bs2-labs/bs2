@@ -617,11 +617,11 @@ version = "0.3.1"
 source = "git+https://github.com/scroll-tech/halo2curves.git?branch=0.3.1-derive-serde#969f1e44d9713ee4cd552563bd0c762c5d53b56e"
 
 [[patch.unused]]
-name = "halo2_proofs"
-version = "0.2.0"
-source = "git+https://github.com/scroll-tech/halo2.git?branch=develop#1070391642dd64b2d68b47ec246cba9e35bd3c15"
-
-[[patch.unused]]
 name = "ethers-core"
 version = "0.17.0"
 source = "git+https://github.com/scroll-tech/ethers-rs.git?branch=v0.17.0#739ec9a0df8daf536937739c87e85612bd73212f"
+
+[[patch.unused]]
+name = "halo2_proofs"
+version = "0.2.0"
+source = "git+https://github.com/scroll-tech/halo2.git?branch=develop#1070391642dd64b2d68b47ec246cba9e35bd3c15"
