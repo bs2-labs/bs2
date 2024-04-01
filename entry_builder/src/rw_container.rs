@@ -1,5 +1,3 @@
-
-
 /// Marker that defines whether an Operation performs a `READ` or a `WRITE`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum RW {
@@ -34,7 +32,7 @@ pub struct RwOp {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RwContainer {
-    /// Operations of memory and register 
+    /// Operations of memory and register
     pub rw_ops: Vec<RwOp>,
 }
 
@@ -46,13 +44,11 @@ impl Default for RwContainer {
 
 impl RwContainer {
     pub fn new() -> Self {
-        Self {
-            rw_ops: Vec::new(),
-        }
+        Self { rw_ops: Vec::new() }
     }
 
     pub fn push_read_op(&mut self, gc: u64, address: u64, value: u64) {
-        let read_op= RwOp {
+        let read_op = RwOp {
             global_clk: gc,
             rwc: self.rw_ops.len() as u64,
             rw: RW::READ,
@@ -63,7 +59,7 @@ impl RwContainer {
     }
 
     pub fn push_write_op(&mut self, gc: u64, address: u64, value: u64) {
-        let write_op= RwOp {
+        let write_op = RwOp {
             global_clk: gc,
             rwc: self.rw_ops.len() as u64,
             rw: RW::WRITE,

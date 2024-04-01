@@ -1,38 +1,32 @@
-use runtime::trace::InstructionType;
-use runtime::trace::Step;
-use runtime::trace::Opcode;
-use std::f32::INFINITY;
-use std::fmt::Debug;
-use core::fmt::Error;
 use crate::rw_container::RwContainer;
+use core::fmt::Error;
+use runtime::trace::InstructionType;
+use runtime::trace::Opcode;
+use runtime::trace::Step;
+use std::fmt::Debug;
 
 mod rtype;
 
 use rtype::RType;
 
+mod btype;
+
+use btype::BType;
+
 pub trait OpcodeFn: Debug {
-    fn gen_associated_ops(
-        rw_contaienr: &mut RwContainer,
-        step: &Step,
-    ) -> Result<(), Error>;
+    fn gen_associated_ops(rw_contaienr: &mut RwContainer, step: &Step) -> Result<(), Error>;
 }
 
 #[derive(Debug, Copy, Clone)]
 struct Dummy;
 
 impl OpcodeFn for Dummy {
-    fn gen_associated_ops(
-        rw_contaienr: &mut RwContainer,
-        step: &Step,
-    ) -> Result<(), Error> {
+    fn gen_associated_ops(_rw_contaienr: &mut RwContainer, _step: &Step) -> Result<(), Error> {
         Ok(())
     }
 }
 
-type FnGenAssociatedOps = fn(
-    rw_contaienr: &mut RwContainer,
-    steps: &Step,
-) -> Result<(), Error>;
+type FnGenAssociatedOps = fn(rw_contaienr: &mut RwContainer, steps: &Step) -> Result<(), Error>;
 
 // TODO:
 // R-type : add rd, rs1, rs2
@@ -44,8 +38,9 @@ type FnGenAssociatedOps = fn(
 fn fn_gen_associated_ops(opcode: Opcode) -> FnGenAssociatedOps {
     let inst_type = opcode.into();
     match inst_type {
-        // TODO: use ckb opcode 
+        // TODO: use ckb opcode
         InstructionType::RType => RType::gen_associated_ops,
+        InstructionType::BType => BType::gen_associated_ops,
         _ => {
             log::debug!("Using dummy gen_associated_ops for opcode {:?}", opcode);
             Dummy::gen_associated_ops

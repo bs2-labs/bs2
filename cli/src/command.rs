@@ -29,10 +29,10 @@ pub struct RunArgs {
 
 pub fn match_operation(cli: &Cli) {
     match &cli.command {
-        Commands::Run(args) => {
+        Commands::Run(_args) => {
             exec_run();
         }
-        Commands::Prove(args) => {
+        Commands::Prove(_args) => {
             println!("create proof");
         }
     }

@@ -1,14 +1,13 @@
 use crate::opcodes::OpcodeFn;
 use crate::opcodes::RwContainer;
 
-
 use core::fmt::Error;
 use runtime::trace::Step;
 
 #[derive(Debug, Copy, Clone)]
-pub(crate) struct RType;
+pub(crate) struct BType;
 
-impl OpcodeFn for RType {
+impl OpcodeFn for BType {
     fn gen_associated_ops(rw_contaienr: &mut RwContainer, step: &Step) -> Result<(), Error> {
         // read rs1
         rw_contaienr.push_read_op(
@@ -39,11 +38,11 @@ impl OpcodeFn for RType {
 mod tests {
     use super::*;
     use crate::builder::EntryBuilder;
-    use crate::rw_container::{RW, RwOp};
+    use crate::rw_container::{RwOp, RW};
     use runtime::trace::Trace;
 
     #[test]
-    fn rtype_gen() {
+    fn BType_gen() {
         let trace_json = r#"
         {
           "circles": 26809,
@@ -53,7 +52,7 @@ mod tests {
               {
                 "global_clk": 0,
                 "pc": 65772,
-                "inst_type": "RType",
+                "inst_type": "BType",
                 "instruction": {
                         "opcode": "ADD",
                         "op_a": 31,
