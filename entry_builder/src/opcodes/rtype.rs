@@ -2,6 +2,7 @@ use crate::opcodes::OpcodeFn;
 use crate::opcodes::RwContainer;
 
 use core::fmt::Error;
+use runtime::trace::Opcode;
 use runtime::trace::Step;
 
 #[derive(Debug, Copy, Clone)]
@@ -9,25 +10,20 @@ pub(crate) struct RType;
 
 impl OpcodeFn for RType {
     fn gen_associated_ops(rw_contaienr: &mut RwContainer, step: &Step) -> Result<(), Error> {
-        rw_contaienr.push_read_op(
-            step.global_clk,
-            step.instruction.op_b,
-            step.registers[step.instruction.op_b as usize],
-        );
+        let b = step.registers[step.instruction.op_b as usize];
+        let c = step.registers[step.instruction.op_c as usize];
+        let result = match step.instruction.opcode {
+            Opcode::ADD => b + c,
+            _ => unimplemented!("Not implemented {:?}", step.instruction.opcode),
+        };
+        // read rs1
+        rw_contaienr.push_read_op(step.global_clk, step.instruction.op_b, b);
 
         // read rs2
-        rw_contaienr.push_read_op(
-            step.global_clk,
-            step.instruction.op_c,
-            step.registers[step.instruction.op_c as usize],
-        );
+        rw_contaienr.push_read_op(step.global_clk, step.instruction.op_c, c);
 
         // write rd
-        rw_contaienr.push_write_op(
-            step.global_clk,
-            step.instruction.op_a,
-            step.registers[step.instruction.op_a as usize],
-        );
+        rw_contaienr.push_write_op(step.global_clk, step.instruction.op_a, result);
 
         Ok(())
     }
