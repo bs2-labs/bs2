@@ -1,4 +1,4 @@
-use runtime::trace::{BType, IType, InstructionType, JType, RType, SType, Step, UType};
+use runtime::trace::{BType, IType, InstructionType, JType, RType, SType, Step, UType, NoType};
 
 use core::fmt::Error;
 use std::{
@@ -445,6 +445,18 @@ impl RwContainer {
         Ok(())
     }
 
+    pub fn step_notype(&mut self, n: NoType, step: &Step) -> Result<(), Error> {
+        match n {
+            NoType::FENCE => (),
+            NoType::ECALL => todo!(),
+            NoType::EBREAK =>todo!(),
+            NoType::UNIMP =>todo!(),
+
+        };
+
+        Ok(())
+    }
+
     pub fn step(&mut self, step: &Step) -> Result<(), Error> {
         self.rwc = 0;
         let opcode = step.instruction.opcode;
@@ -455,6 +467,7 @@ impl RwContainer {
             InstructionType::IType(i) => self.step_itype(i, step),
             InstructionType::JType(j) => self.step_jtype(j, step),
             InstructionType::UType(u) => self.step_utype(u, step),
+            InstructionType::NoType(n) => self.step_notype(n, step),
             _ => {
                 unimplemented!("Not implemented {:?}", step.instruction.opcode);
             }
