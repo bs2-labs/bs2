@@ -279,7 +279,7 @@ impl RwContainer {
     pub fn step_stype_or_btype(&mut self, step: &Step) -> (u64, u64, u64) {
         let rs1 = step.registers[step.instruction.op_a as usize];
         let rs2 = step.registers[step.instruction.op_b as usize];
-        let imm = step.registers[step.instruction.op_c as usize];
+        let imm = step.instruction.op_c as u64;
         self.read_register(step.global_clk, step.instruction.op_a, rs1);
         self.read_register(step.global_clk, step.instruction.op_b, rs2);
         (rs1, rs2, imm)
@@ -291,6 +291,7 @@ impl RwContainer {
         let (addr, _) = (rs1 as i64).overflowing_add(imm as i64);
         let addr = addr as u64;
         let value = rs2;
+        dbg!(stype);
         match stype {
             SType::SB => {
                 self.write_memory(step.global_clk, addr, value, 8);
@@ -300,6 +301,9 @@ impl RwContainer {
             }
             SType::SW => {
                 self.write_memory(step.global_clk, addr, value, 32);
+            }
+            SType::SD => {
+                self.write_memory(step.global_clk, addr, value, 64);
             }
             _ => panic!("Not implemented {:?}", step.instruction.opcode),
         }
@@ -419,7 +423,7 @@ impl RwContainer {
 
     pub fn step_jtype(&mut self, jtype: JType, step: &Step) -> Result<(), Error> {
         let rd_index = step.instruction.op_a;
-        let imm = step.registers[step.instruction.op_b as usize] as i32;
+        let imm = step.instruction.op_b as i32;
 
         match jtype {
             JType::JAL => {
@@ -453,12 +457,12 @@ impl RwContainer {
     }
 
     pub fn step_utype(&mut self, u: UType, step: &Step) -> Result<(), Error> {
-        let imm = step.registers[step.instruction.op_a as usize];
+        let imm = step.instruction.op_a as u64;
 
         let result = match u {
             UType::LUI => imm as u64,
             UType::AUIPC => {
-                let new_pc = step.pc + imm as u64;
+                let new_pc = (step.pc + imm) as u64;
                 self.update_pc_register(step.global_clk, new_pc);
                 new_pc
             }
@@ -473,7 +477,7 @@ impl RwContainer {
     pub fn step_notype(&mut self, n: NoType, _step: &Step) -> Result<(), Error> {
         match n {
             NoType::FENCE => (),
-            NoType::ECALL => todo!(),
+            NoType::ECALL => (),
             NoType::EBREAK => todo!(),
             NoType::UNIMP => todo!(),
         };
