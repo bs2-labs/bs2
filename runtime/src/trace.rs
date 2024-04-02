@@ -68,6 +68,7 @@ pub enum Opcode {
     SRAI = 47,
 
     FENCE = 48,
+    SUBW = 49,
     // Miscellaneaous instructions.
     UNIMP = 255,
 }
@@ -123,6 +124,7 @@ impl From<u16> for Opcode {
             46 => Opcode::SRLI,
             47 => Opcode::SRAI,
             48 => Opcode::FENCE,
+            49 => Opcode::SUBW,
 
             255 => Opcode::UNIMP,
             _ => panic!("Invalid opcode value"),
@@ -181,6 +183,7 @@ impl Opcode {
             "SRLI" => Some(Opcode::SRLI),
             "SRAI" => Some(Opcode::SRAI),
             "FENCE" => Some(Opcode::FENCE),
+            "SUBW" => Some(Opcode::SUBW),
 
             "UNIMP" => Some(Opcode::UNIMP),
             _ => None,
@@ -243,6 +246,7 @@ impl Serialize for Opcode {
             Opcode::SRLI => "SRLI",
             Opcode::SRAI => "SRAI",
             Opcode::FENCE => "FENCE",
+            Opcode::SUBW => "SUBW",
         })
     }
 }
@@ -283,7 +287,8 @@ impl Opcode {
             | Opcode::DIV
             | Opcode::DIVU
             | Opcode::REM
-            | Opcode::REMU => InstructionType::RType,
+            | Opcode::REMU
+            | Opcode::SUBW => InstructionType::RType,
             Opcode::BEQ | Opcode::BNE | Opcode::BGE | Opcode::BGEU | Opcode::BLT | Opcode::BLTU => {
                 InstructionType::BType
             }

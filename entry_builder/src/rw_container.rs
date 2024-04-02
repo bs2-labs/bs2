@@ -1,3 +1,4 @@
+use std::cmp::min;
 use runtime::trace::{InstructionType, Opcode, Step};
 
 use core::fmt::Error;
@@ -150,14 +151,18 @@ impl RwContainer {
         let result = match opcode {
             Opcode::ADD => rs1_value + rs2_value,
             Opcode::SUB => rs1_value - rs2_value,
+            Opcode::SUBW => {
+                let (value, _) = rs1_value.overflowing_sub(rs2_value);
+                (((value << 32) as i64) >> 32) as u64
+            }
             Opcode::SLL => {
                 let shift_value = rs2_value.clone() & SHIFT_MASK;
                 rs1_value.clone() << shift_value
-            },
+            }
             Opcode::SRL => {
                 let shift_value = rs2_value.clone() & SHIFT_MASK;
                 rs1_value.clone() >> shift_value
-            },
+            }
             Opcode::SRA => rs1_value.clone() >> rs2_value,
             Opcode::SLT => (rs1_value < rs2_value).into(),
             Opcode::SLTU => (rs1_value < rs2_value).into(),
