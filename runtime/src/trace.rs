@@ -339,7 +339,7 @@ pub struct Instruction {
 }
 
 impl Instruction {
-    pub fn get_instruction_length(&self) -> usize {
+    pub fn get_instruction_length(&self) -> u64 {
         4
     }
 }

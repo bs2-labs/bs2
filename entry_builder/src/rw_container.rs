@@ -1,7 +1,10 @@
 use runtime::trace::{InstructionType, Opcode, Step};
 
 use core::fmt::Error;
-use std::io::{Cursor, Seek, SeekFrom};
+use std::{
+    io::{Cursor, Seek, SeekFrom},
+    ops::Shr,
+};
 
 use byteorder::{LittleEndian, WriteBytesExt};
 
@@ -268,6 +271,75 @@ impl RwContainer {
         Ok(())
     }
 
+    pub fn step_itype(&mut self, step: &Step) -> Result<(), Error> {
+        let rd_index = step.instruction.op_a;
+        let rs1 = step.registers[step.instruction.op_b as usize];
+        let imm = step.registers[step.instruction.op_c as usize];
+        let opcode = step.instruction.opcode;
+
+        match opcode {
+            Opcode::JALR => {
+                let result = step.pc + step.instruction.get_instruction_length();
+                let next_pc = rs1 + imm;
+                let next_pc = next_pc;
+                self.write_register(step.global_clk, rd_index, result);
+                self.update_pc_register(step.global_clk, next_pc);
+            }
+            Opcode::ADDI => {
+                let rs1 = rs1 as i64;
+                let imm = imm as i64;
+                let result = rs1 + imm;
+                self.write_register(step.global_clk, rd_index, result as u64);
+            }
+            Opcode::SLTI => {
+                let result = (rs1 as i64) < (imm as i64);
+                self.write_register(step.global_clk, rd_index, result as u64);
+            }
+            Opcode::SLTIU => {
+                let result = (rs1 as u64) < (imm as u64);
+                self.write_register(step.global_clk, rd_index, result as u64);
+            }
+            Opcode::XORI => {
+                let rs1 = rs1 as i64;
+                let imm = imm as i64;
+                let result = rs1 ^ imm;
+                self.write_register(step.global_clk, rd_index, result as u64);
+            }
+            Opcode::ORI => {
+                let rs1 = rs1 as i64;
+                let imm = imm as i64;
+                let result = rs1 | imm;
+                self.write_register(step.global_clk, rd_index, result as u64);
+            }
+            Opcode::ANDI => {
+                let rs1 = rs1 as i64;
+                let imm = imm as i64;
+                let result = rs1 & imm;
+                self.write_register(step.global_clk, rd_index, result as u64);
+            }
+            Opcode::SLLI => {
+                let rs1 = rs1 as u64;
+                let imm = imm as u64;
+                let result = rs1 << imm;
+                self.write_register(step.global_clk, rd_index, result as u64);
+            }
+            Opcode::SRLI => {
+                let rs1 = rs1 as u64;
+                let imm = imm as u64;
+                let result = rs1 >> imm;
+                self.write_register(step.global_clk, rd_index, result as u64);
+            }
+            Opcode::SRAI => {
+                let rs1 = rs1 as i64;
+                let imm = imm as u64;
+                let result = rs1.shr(imm);
+                self.write_register(step.global_clk, rd_index, result as u64);
+            }
+            _ => panic!("Not implemented {:?}", step.instruction.opcode),
+        }
+        Ok(())
+    }
+
     pub fn step_btype(&mut self, step: &Step) -> Result<(), Error> {
         let (rs1, rs2, imm) = self.step_stype_or_btype(step);
         let opcode = step.instruction.opcode;
@@ -297,6 +369,7 @@ impl RwContainer {
             InstructionType::RType => self.step_rtype(step),
             InstructionType::BType => self.step_btype(step),
             InstructionType::SType => self.step_stype(step),
+            InstructionType::IType => self.step_itype(step),
             _ => {
                 unimplemented!("Not implemented {:?}", step.instruction.opcode);
             }
