@@ -1,4 +1,4 @@
-use runtime::trace::{BType, IType, InstructionType, JType, RType, SType, Step, UType, NoType};
+use runtime::trace::{BType, IType, InstructionType, JType, NoType, RType, SType, Step, UType};
 
 use core::fmt::Error;
 use std::{
@@ -6,7 +6,7 @@ use std::{
     ops::Shr,
 };
 
-use byteorder::{LittleEndian, WriteBytesExt};
+use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 
 use crate::Register;
 
@@ -115,7 +115,17 @@ impl RwContainer {
         self.rwc += 1;
     }
 
-    pub fn read_memory(&mut self, gc: u64, address: u64, value: u64, width: u8) {
+    pub fn read_memory(&mut self, gc: u64, address: u64, width: u8) -> u64 {
+        let mut reader = Cursor::new(&self.memory_values);
+        reader.seek(SeekFrom::Start(address)).unwrap();
+        let value = match width {
+            8 => reader.read_u8().unwrap() as u64,
+            16 => reader.read_u16::<LittleEndian>().unwrap() as u64,
+            32 => reader.read_u32::<LittleEndian>().unwrap() as u64,
+            64 => reader.read_u64::<LittleEndian>().unwrap() as u64,
+            _ => panic!("Not implemented {:?}", width),
+        };
+
         let read_op = RwMemoryOp {
             global_clk: gc,
             rw: RW::READ,
@@ -124,6 +134,7 @@ impl RwContainer {
             width,
         };
         self.rw_memory_ops.push(read_op);
+        value
     }
 
     pub fn write_memory(&mut self, gc: u64, address: u64, value: u64, width: u8) {
@@ -141,6 +152,7 @@ impl RwContainer {
             8 => writer.write_u8(value as u8).unwrap(),
             16 => writer.write_u16::<LittleEndian>(value as u16).unwrap(),
             32 => writer.write_u32::<LittleEndian>(value as u32).unwrap(),
+            64 => writer.write_u64::<LittleEndian>(value as u64).unwrap(),
             _ => panic!("Not implemented {:?}", width),
         }
     }
@@ -294,6 +306,8 @@ impl RwContainer {
         let rs1 = step.registers[step.instruction.op_b as usize];
         let imm = step.registers[step.instruction.op_c as usize];
 
+        let addr = Register::overflowing_add(&rs1, &u64::from_i32(imm as i32));
+
         // TODO: we didn't consider word width while doing some arithematic operation.
         match itype {
             IType::JALR => {
@@ -381,13 +395,18 @@ impl RwContainer {
                 let result = (result as u64).sign_extend(&32);
                 self.write_register(step.global_clk, rd_index, result as u64);
             }
-            IType::LB => todo!(),
-            IType::LH => todo!(),
-            IType::LW => todo!(),
-            IType::LD => todo!(),
-            IType::LBU => todo!(),
-            IType::LHU => todo!(),
-            IType::LWU => todo!(),
+            IType::LB | IType::LBU => {
+                self.read_memory(step.global_clk, addr, 8);
+            }
+            IType::LH | IType::LHU => {
+                self.read_memory(step.global_clk, addr, 16);
+            }
+            IType::LW | IType::LWU=> {
+                self.read_memory(step.global_clk, addr, 32);
+            }
+            IType::LD => {
+                self.read_memory(step.global_clk, addr, 64);
+            }
         }
         Ok(())
     }
@@ -445,13 +464,12 @@ impl RwContainer {
         Ok(())
     }
 
-    pub fn step_notype(&mut self, n: NoType, step: &Step) -> Result<(), Error> {
+    pub fn step_notype(&mut self, n: NoType, _step: &Step) -> Result<(), Error> {
         match n {
             NoType::FENCE => (),
             NoType::ECALL => todo!(),
-            NoType::EBREAK =>todo!(),
-            NoType::UNIMP =>todo!(),
-
+            NoType::EBREAK => todo!(),
+            NoType::UNIMP => todo!(),
         };
 
         Ok(())
@@ -468,9 +486,6 @@ impl RwContainer {
             InstructionType::JType(j) => self.step_jtype(j, step),
             InstructionType::UType(u) => self.step_utype(u, step),
             InstructionType::NoType(n) => self.step_notype(n, step),
-            _ => {
-                unimplemented!("Not implemented {:?}", step.instruction.opcode);
-            }
         }
     }
 }
