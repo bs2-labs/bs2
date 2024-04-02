@@ -1,4 +1,3 @@
-use std::cmp::min;
 use runtime::trace::{InstructionType, Opcode, Step};
 
 use core::fmt::Error;
@@ -371,10 +370,10 @@ impl RwContainer {
         self.rwc = 0;
         let opcode = step.instruction.opcode;
         match opcode.into() {
-            InstructionType::RType => self.step_rtype(step),
-            InstructionType::BType => self.step_btype(step),
-            InstructionType::SType => self.step_stype(step),
-            InstructionType::IType => self.step_itype(step),
+            InstructionType::RType(_) => self.step_rtype(step),
+            InstructionType::BType(_) => self.step_btype(step),
+            InstructionType::SType(_) => self.step_stype(step),
+            InstructionType::IType(_) => self.step_itype(step),
             _ => {
                 unimplemented!("Not implemented {:?}", step.instruction.opcode);
             }

@@ -1,3 +1,4 @@
+use core::panic;
 use serde::{Deserialize, Serialize};
 use std::vec::Vec;
 
@@ -318,62 +319,28 @@ impl<'de> Deserialize<'de> for Opcode {
 
 impl Opcode {
     fn instruction_type(&self) -> InstructionType {
-        match self {
-            Opcode::ADD
-            | Opcode::SUB
-            | Opcode::SLL
-            | Opcode::SLT
-            | Opcode::SLTU
-            | Opcode::XOR
-            | Opcode::SRL
-            | Opcode::SRA
-            | Opcode::OR
-            | Opcode::AND
-            | Opcode::MUL
-            | Opcode::MULH
-            | Opcode::MULHU
-            | Opcode::MULHSU
-            | Opcode::DIV
-            | Opcode::DIVU
-            | Opcode::REM
-            | Opcode::REMU
-            | Opcode::ADDW
-            | Opcode::SUBW
-            | Opcode::SLLW
-            | Opcode::SRLW
-            | Opcode::SRAW => InstructionType::RType,
-            Opcode::BEQ | Opcode::BNE | Opcode::BGE | Opcode::BGEU | Opcode::BLT | Opcode::BLTU => {
-                InstructionType::BType
-            }
-            Opcode::JAL
-            | Opcode::LB
-            | Opcode::LH
-            | Opcode::LW
-            | Opcode::LBU
-            | Opcode::LHU
-            | Opcode::LWU
-            | Opcode::LD => InstructionType::JType,
-            Opcode::JALR
-            | Opcode::ADDI
-            | Opcode::SLTI
-            | Opcode::SLTIU
-            | Opcode::XORI
-            | Opcode::ORI
-            | Opcode::ANDI
-            | Opcode::SLLI
-            | Opcode::SRLI
-            | Opcode::SRAI
-            | Opcode::ADDIW
-            | Opcode::SLLIW
-            | Opcode::SRLIW
-            | Opcode::SRAIW => InstructionType::IType,
-            Opcode::LUI | Opcode::AUIPC => InstructionType::UType,
-            Opcode::SB | Opcode::SH | Opcode::SW | Opcode::SD => InstructionType::SType,
-
-            Opcode::FENCE => InstructionType::NOTYPE,
-            Opcode::ECALL | Opcode::EBREAK => InstructionType::NOTYPE,
-            Opcode::UNIMP => InstructionType::NOTYPE,
+        if let Ok(r) = RType::try_from(*self) {
+            return InstructionType::RType(r);
         }
+        if let Ok(r) = BType::try_from(*self) {
+            return InstructionType::BType(r);
+        }
+        if let Ok(r) = IType::try_from(*self) {
+            return InstructionType::IType(r);
+        }
+        if let Ok(r) = UType::try_from(*self) {
+            return InstructionType::UType(r);
+        }
+        if let Ok(r) = SType::try_from(*self) {
+            return InstructionType::SType(r);
+        }
+        if let Ok(r) = JType::try_from(*self) {
+            return InstructionType::JType(r);
+        }
+        if let Ok(r) = NoType::try_from(*self) {
+            return InstructionType::NoType(r);
+        }
+        unreachable!("Pattern matching should be exhaustive")
     }
 }
 
@@ -383,15 +350,127 @@ impl From<Opcode> for InstructionType {
     }
 }
 
+#[macro_export]
+macro_rules! sub_enum {
+    ($sub_enum_name:ident of $super_enum_name:ty {
+        $($variant:ident),* $(,)?
+    }) => {
+        #[derive(Copy, Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
+        pub enum $sub_enum_name {
+            $($variant,)*
+        }
+
+        impl From<$sub_enum_name> for $super_enum_name {
+            fn from(val: $sub_enum_name) -> $super_enum_name {
+                match val {
+                    $(<$sub_enum_name>::$variant => <$super_enum_name>::$variant,)*
+                }
+            }
+        }
+
+        impl std::convert::TryFrom<$super_enum_name> for $sub_enum_name {
+            type Error = ();
+            fn try_from(val: $super_enum_name) -> Result<Self, Self::Error> {
+                match val {
+                    $(<$super_enum_name>::$variant => Ok(Self::$variant),)*
+                    _ => Err(())
+                }
+            }
+        }
+    }
+}
+
+sub_enum!(RType of Opcode {
+    ADD,
+    SUB,
+    SLL,
+    SLT,
+    SLTU,
+    XOR,
+    SRL,
+    SRA,
+    OR,
+    AND,
+    MUL,
+    MULH,
+    MULHU,
+    MULHSU,
+    DIV,
+    DIVU,
+    REM,
+    REMU,
+    ADDW,
+    SUBW,
+    SLLW,
+    SRLW,
+    SRAW,
+});
+
+sub_enum!(IType of Opcode {
+    JALR,
+    ADDI,
+    SLTI,
+    SLTIU,
+    XORI,
+    ORI,
+    ANDI,
+    SLLI,
+    SRLI,
+    SRAI,
+    ADDIW,
+    SLLIW,
+    SRLIW,
+    SRAIW,
+});
+
+sub_enum!(BType of Opcode {
+    BEQ,
+    BNE,
+    BGE,
+    BGEU,
+    BLT,
+    BLTU,
+});
+
+sub_enum!(SType of Opcode {
+    SB,
+    SH,
+    SW,
+    SD,
+});
+
+sub_enum!(JType of Opcode {
+    JAL,
+    LB,
+    LH,
+    LW,
+    LD,
+    LBU,
+    LHU,
+    LWU
+});
+
+sub_enum!(UType of Opcode {
+    LUI,
+    AUIPC,
+});
+
+sub_enum!(NoType of Opcode {
+    FENCE,
+    ECALL,
+    EBREAK,
+    UNIMP,
+});
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
 pub enum InstructionType {
-    RType,
-    IType,
-    SType,
-    BType,
-    UType,
-    JType,
-    NOTYPE,
+    RType(RType),
+    IType(IType),
+    SType(SType),
+    BType(BType),
+    UType(UType),
+    JType(JType),
+    NoType(NoType),
 }
 
 /// An instruction specifies an operation to execute and the operands.
