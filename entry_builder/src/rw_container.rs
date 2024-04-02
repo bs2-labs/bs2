@@ -115,7 +115,9 @@ impl RwContainer {
     }
 
     pub fn write_register(&mut self, gc: u64, index: u64, value: u64) {
-        self.register[index as usize] = value;
+        if index != 0 {
+            self.register[index as usize] = value;
+        }
         let write_op = RwRegisterOp {
             global_clk: gc,
             rwc: self.rwc,
@@ -413,15 +415,19 @@ impl RwContainer {
                 self.write_register(step.global_clk, rd_index, result as u64);
             }
             IType::LB | IType::LBU => {
+                self.should_copy_registers = true;
                 self.read_memory(step.global_clk, addr, 8);
             }
             IType::LH | IType::LHU => {
+                self.should_copy_registers = true;
                 self.read_memory(step.global_clk, addr, 16);
             }
             IType::LW | IType::LWU => {
+                self.should_copy_registers = true;
                 self.read_memory(step.global_clk, addr, 32);
             }
             IType::LD => {
+                self.should_copy_registers = true;
                 self.read_memory(step.global_clk, addr, 64);
             }
         }
@@ -501,6 +507,10 @@ impl RwContainer {
         if self.should_copy_registers {
             self.register = step.registers.clone();
             self.should_copy_registers = false;
+        } else {
+            for (index, (left, right)) in step.registers.iter().zip(self.register.clone()).enumerate() {
+                assert_eq!(*left, right, "Register {} is not the same", index)
+            }
         }
 
         match opcode.into() {
