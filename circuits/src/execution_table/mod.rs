@@ -1,5 +1,6 @@
 use crate::execution_table::op_configure::rtype::RTypeGadget;
-use halo2_proofs::arithmetic::{FieldExt, Field};
+use entry_builder::entries::Entries;
+use halo2_proofs::arithmetic::{Field, FieldExt};
 use halo2_proofs::halo2curves::bn256::Fr;
 use halo2_proofs::plonk::Column;
 use halo2_proofs::plonk::Instance;
@@ -10,9 +11,6 @@ use halo2_proofs::{
 use std::marker::PhantomData;
 
 pub mod op_configure;
-
-#[derive(Default, Clone)]
-pub struct Entries {}
 
 #[derive(Clone)]
 pub struct ExecutionTable<F> {
@@ -28,11 +26,7 @@ impl<F: FieldExt> ExecutionTable<F> {
         }
     }
 
-    pub fn assign(
-        &self,
-        layouter: &mut impl Layouter<F>,
-        entries: &Entries,
-    ) -> Result<(), Error> {
+    pub fn assign(&self, layouter: &mut impl Layouter<F>, entries: &Entries) -> Result<(), Error> {
         self.rtype.assign(layouter, entries)?;
 
         Ok(())

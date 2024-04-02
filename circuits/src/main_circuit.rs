@@ -1,6 +1,6 @@
-use crate::execution_table::Entries;
-use crate::execution_table::{self, ExecutionTable};
-use halo2_proofs::arithmetic::{FieldExt, Field};
+use crate::execution_table::ExecutionTable;
+use entry_builder::entries::Entries;
+use halo2_proofs::arithmetic::{Field, FieldExt};
 use halo2_proofs::halo2curves::bn256::Fr;
 use halo2_proofs::{
     circuit::{Layouter, SimpleFloorPlanner},
@@ -24,11 +24,7 @@ impl<F: FieldExt> MainConfig<F> {
         }
     }
 
-    fn assign(
-        &self,
-        layouter: &mut impl Layouter<F>,
-        entries: &Entries,
-    ) -> Result<(), Error> {
+    fn assign(&self, layouter: &mut impl Layouter<F>, entries: &Entries) -> Result<(), Error> {
         self.execution_table.assign(layouter, entries);
         Ok(())
     }
@@ -43,7 +39,7 @@ pub struct MainCircuit<F> {
 impl<F: FieldExt> MainCircuit<F> {
     pub fn new() -> Self {
         Self {
-            entries: Entries {},
+            entries: Entries::default(),
             _marker: PhantomData::default(),
         }
     }
@@ -70,7 +66,11 @@ impl<F: FieldExt> Circuit<F> for MainCircuit<F> {
         MainConfig::configure(cs)
     }
 
-    fn synthesize(&self, config: Self::Config, mut layouter: impl Layouter<F>) -> Result<(), Error> {
+    fn synthesize(
+        &self,
+        config: Self::Config,
+        mut layouter: impl Layouter<F>,
+    ) -> Result<(), Error> {
         log::debug!("assigning state_circuit");
 
         config.assign(&mut layouter, &self.entries);

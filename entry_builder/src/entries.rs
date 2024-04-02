@@ -34,7 +34,7 @@ impl RW {
 
 // new Memory or Regisger ops for u64 value
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RwRegisterOp {
+pub struct RegisterOp {
     pub global_clk: u64,
     pub rwc: u64,
     pub rw: RW,
@@ -46,7 +46,7 @@ pub struct RwRegisterOp {
 
 // new Memory or Regisger ops for u64 value
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RwMemoryOp {
+pub struct MemoryOp {
     pub global_clk: u64,
     pub rw: RW,
     /// Memory address
@@ -58,11 +58,11 @@ pub struct RwMemoryOp {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RwContainer {
+pub struct Entries {
     /// Operations of memory and register
-    pub rw_memory_ops: Vec<RwMemoryOp>,
+    pub memory_ops: Vec<MemoryOp>,
     /// Operations of memory and register
-    pub rw_register_ops: Vec<RwRegisterOp>,
+    pub register_ops: Vec<RegisterOp>,
     /// Memory values to faciliate the memory operations
     /// Default to 32MB memory as ckb-vm may have flexible memory size.
     pub memory_values: Vec<u8>,
@@ -75,17 +75,17 @@ pub struct RwContainer {
     pub rwc: u64,
 }
 
-impl Default for RwContainer {
+impl Default for Entries {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl RwContainer {
+impl Entries {
     pub fn new() -> Self {
         Self {
-            rw_memory_ops: Vec::new(),
-            rw_register_ops: Vec::new(),
+            memory_ops: Vec::new(),
+            register_ops: Vec::new(),
             // Some registers has initial state, so we need to copy them at first.
             should_copy_registers: true,
             memory_values: [0; 1024 * 1024 * 32].to_vec(),
@@ -103,14 +103,14 @@ impl RwContainer {
             self.register[index as usize], value,
             "Read the wrong register value"
         );
-        let read_op = RwRegisterOp {
+        let read_op = RegisterOp {
             global_clk: gc,
             rwc: self.rwc,
             rw: RW::READ,
             index,
             value,
         };
-        self.rw_register_ops.push(read_op);
+        self.register_ops.push(read_op);
         self.rwc += 1;
     }
 
@@ -118,14 +118,14 @@ impl RwContainer {
         if index != 0 {
             self.register[index as usize] = value;
         }
-        let write_op = RwRegisterOp {
+        let write_op = RegisterOp {
             global_clk: gc,
             rwc: self.rwc,
             rw: RW::WRITE,
             index,
             value,
         };
-        self.rw_register_ops.push(write_op);
+        self.register_ops.push(write_op);
         self.rwc += 1;
     }
 
@@ -140,26 +140,26 @@ impl RwContainer {
             _ => panic!("Not implemented {:?}", width),
         };
 
-        let read_op = RwMemoryOp {
+        let read_op = MemoryOp {
             global_clk: gc,
             rw: RW::READ,
             address,
             value,
             width,
         };
-        self.rw_memory_ops.push(read_op);
+        self.memory_ops.push(read_op);
         value
     }
 
     pub fn write_memory(&mut self, gc: u64, address: u64, value: u64, width: u8) {
-        let write_op = RwMemoryOp {
+        let write_op = MemoryOp {
             global_clk: gc,
             rw: RW::WRITE,
             address,
             value,
             width,
         };
-        self.rw_memory_ops.push(write_op);
+        self.memory_ops.push(write_op);
         let mut writer = Cursor::new(&mut self.memory_values);
         writer.seek(SeekFrom::Start(address)).unwrap();
         match width {
@@ -534,7 +534,7 @@ impl RwContainer {
 #[cfg(test)]
 mod tests {
     use crate::builder::EntryBuilder;
-    use crate::rw_container::{RwRegisterOp, RW};
+    use crate::entries::{RegisterOp, RW};
     use runtime::trace::Trace;
 
     #[test]
@@ -566,23 +566,23 @@ mod tests {
         builder.build(&trace).expect("build entries failed");
 
         assert_eq!(
-            builder.rw_container.rw_register_ops,
+            builder.rw_container.register_ops,
             vec![
-                RwRegisterOp {
+                RegisterOp {
                     global_clk: 0,
                     rwc: 0,
                     rw: RW::READ,
                     index: 1,
                     value: 0
                 },
-                RwRegisterOp {
+                RegisterOp {
                     global_clk: 0,
                     rwc: 1,
                     rw: RW::READ,
                     index: 3,
                     value: 0
                 },
-                RwRegisterOp {
+                RegisterOp {
                     global_clk: 0,
                     rwc: 2,
                     rw: RW::WRITE,
@@ -622,23 +622,23 @@ mod tests {
         builder.build(&trace).expect("build entries failed");
 
         assert_eq!(
-            builder.rw_container.rw_register_ops,
+            builder.rw_container.register_ops,
             vec![
-                RwRegisterOp {
+                RegisterOp {
                     global_clk: 0,
                     rwc: 0,
                     rw: RW::READ,
                     index: 1,
                     value: 0
                 },
-                RwRegisterOp {
+                RegisterOp {
                     global_clk: 0,
                     rwc: 1,
                     rw: RW::READ,
                     index: 3,
                     value: 0
                 },
-                RwRegisterOp {
+                RegisterOp {
                     global_clk: 0,
                     rwc: 2,
                     rw: RW::WRITE,

@@ -324,6 +324,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "clap 4.2.1",
+ "entry_builder",
  "halo2_proofs",
  "hex",
  "log",

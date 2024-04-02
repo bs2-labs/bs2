@@ -13,6 +13,7 @@ anyhow = "1.0"
 chrono = "0.4.23"
 
 halo2_proofs = { path = "../halo2_proofs" }
+entry_builder = { path = "../entry_builder" }
 
 [features]
 super = []

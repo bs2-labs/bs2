@@ -49,8 +49,6 @@ impl<F: FieldExt> RTypeGadget<F> {
         layouter.assign_region(
             || "fibo",
             |mut region| {
-                let col0 = self.col0;
-                let col1 = self.col1;
                 let selector = self.selector;
                 selector.enable(&mut region, 0)?;
 
@@ -58,21 +56,21 @@ impl<F: FieldExt> RTypeGadget<F> {
                     || "lhs",
                     self.col0,
                     0,
-                    || Value::known(F::one()),
+                    || Value::known(F::from(100)),
                 )?;
 
                 region.assign_advice(
                     || "private input",
                     self.col1,
                     0,
-                    || Value::known(F::one()),
+                    || Value::known(F::from(20)),
                 )?;
 
                 region.assign_advice(
                     || "private input",
                     self.col0,
                     1,
-                    || Value::known(F::from(2)),
+                    || Value::known(F::from(120)),
                 )?;
 
                 Ok(())

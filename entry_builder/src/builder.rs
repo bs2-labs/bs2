@@ -1,9 +1,9 @@
-use crate::rw_container::RwContainer;
+use crate::entries::Entries;
 use core::fmt::Error;
 use runtime::trace::Trace;
 
 pub struct EntryBuilder {
-    pub rw_container: RwContainer,
+    pub rw_container: Entries,
 }
 
 impl Default for EntryBuilder {
@@ -15,7 +15,7 @@ impl Default for EntryBuilder {
 impl EntryBuilder {
     pub fn new() -> EntryBuilder {
         Self {
-            rw_container: RwContainer::new(),
+            rw_container: Entries::new(),
         }
     }
 
@@ -23,7 +23,7 @@ impl EntryBuilder {
         for (_index, step) in trace.steps.iter().enumerate() {
             // match step.instruction.opcode
             // TODO: store rw operations to container
-            dbg!(&self.rw_container.rw_register_ops);
+            dbg!(&self.rw_container.register_ops);
             self.rw_container.step(step)?;
         }
 
