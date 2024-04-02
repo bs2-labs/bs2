@@ -1,4 +1,4 @@
-use runtime::trace::{BType, IType, InstructionType, Opcode, RType, SType, Step};
+use runtime::trace::{BType, IType, InstructionType, RType, SType, Step};
 
 use core::fmt::Error;
 use std::{
@@ -279,6 +279,7 @@ impl RwContainer {
         let rs1 = step.registers[step.instruction.op_b as usize];
         let imm = step.registers[step.instruction.op_c as usize];
 
+        // TODO: we didn't consider word width while doing some arithematic operation.
         match itype {
             IType::JALR => {
                 let result = step.pc + step.instruction.get_instruction_length();
@@ -337,7 +338,30 @@ impl RwContainer {
                 let result = rs1.shr(imm);
                 self.write_register(step.global_clk, rd_index, result as u64);
             }
-            _ => panic!("Not implemented {:?}", step.instruction.opcode),
+            IType::SLLIW => {
+                let rs1 = rs1 as u64;
+                let imm = imm as u64;
+                let result = rs1 << imm;
+                self.write_register(step.global_clk, rd_index, result as u64);
+            }
+            IType::ADDIW => {
+                let rs1 = rs1 as i64;
+                let imm = imm as i64;
+                let result = rs1 + imm;
+                self.write_register(step.global_clk, rd_index, result as u64);
+            }
+            IType::SRLIW => {
+                let rs1 = rs1 as u64;
+                let imm = imm as u64;
+                let result = rs1 >> imm;
+                self.write_register(step.global_clk, rd_index, result as u64);
+            }
+            IType::SRAIW => {
+                let rs1 = rs1 as i64;
+                let imm = imm as u64;
+                let result = rs1.shr(imm);
+                self.write_register(step.global_clk, rd_index, result as u64);
+            }
         }
         Ok(())
     }
