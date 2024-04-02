@@ -500,9 +500,8 @@ mod tests {
     fn btype_gen() {
         let trace_json = r#"
         {
-          "circles": 26809,
-          "failed": false,
-          "returnValue": "0",
+          "cycles": 26809,
+          "return_value": 0,
           "steps": [
               {
                 "global_clk": 0,
@@ -557,9 +556,8 @@ mod tests {
     fn rtype_gen() {
         let trace_json = r#"
         {
-          "circles": 26809,
-          "failed": false,
-          "returnValue": "0",
+          "cycles": 26809,
+          "return_value": 0,
           "steps": [
               {
                 "global_clk": 0,

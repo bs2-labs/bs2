@@ -501,10 +501,8 @@ pub struct Step {
 
 #[derive(Deserialize, Serialize, Clone, Debug, Eq, PartialEq)]
 pub struct Trace {
-    pub circles: u64,
-    pub failed: bool,
-    #[serde(rename = "returnValue")]
-    pub return_value: String,
+    pub cycles: u64,
+    pub return_value: u8,
     pub steps: Vec<Step>,
 }
 
@@ -516,9 +514,8 @@ mod tests {
     fn deserialize_trace() {
         let trace_json = r#"
         {
-          "circles": 26809,
-          "failed": false,
-          "returnValue": "0",
+          "cycles": 26809,
+          "return_value": 0,
           "steps": [
               {
                 "global_clk": 0,
@@ -539,9 +536,8 @@ mod tests {
         assert_eq!(
             trace,
             Trace {
-                circles: 26809,
-                failed: false,
-                return_value: "0".into(),
+                cycles: 26809,
+                return_value: 0,
                 steps: vec![Step {
                     global_clk: 0,
                     pc: 65772,
