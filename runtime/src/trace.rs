@@ -68,7 +68,23 @@ pub enum Opcode {
     SRAI = 47,
 
     FENCE = 48,
-    SUBW = 49,
+
+    // Riscv64 instructions
+    LWU = 49,
+    LD = 50,
+
+    SD = 51,
+
+    ADDIW = 52,
+    SLLIW = 53,
+    SRLIW = 54,
+    SRAIW = 55,
+    ADDW = 56,
+    SUBW = 57,
+    SLLW = 58,
+    SRLW = 59,
+    SRAW = 60,
+
     // Miscellaneaous instructions.
     UNIMP = 255,
 }
@@ -124,7 +140,18 @@ impl From<u16> for Opcode {
             46 => Opcode::SRLI,
             47 => Opcode::SRAI,
             48 => Opcode::FENCE,
-            49 => Opcode::SUBW,
+            49 => Opcode::LWU,
+            50 => Opcode::LD,
+            51 => Opcode::SD,
+            52 => Opcode::ADDIW,
+            53 => Opcode::SLLIW,
+            54 => Opcode::SRLIW,
+            55 => Opcode::SRAIW,
+            56 => Opcode::ADDW,
+            57 => Opcode::SUBW,
+            58 => Opcode::SLLW,
+            59 => Opcode::SRLW,
+            60 => Opcode::SRAW,
 
             255 => Opcode::UNIMP,
             _ => panic!("Invalid opcode value"),
@@ -183,7 +210,18 @@ impl Opcode {
             "SRLI" => Some(Opcode::SRLI),
             "SRAI" => Some(Opcode::SRAI),
             "FENCE" => Some(Opcode::FENCE),
+            "LWU" => Some(Opcode::LWU),
+            "LD" => Some(Opcode::LD),
+            "SD" => Some(Opcode::SD),
+            "ADDIW" => Some(Opcode::ADDIW),
+            "SLLIW" => Some(Opcode::SLLIW),
+            "SRLIW" => Some(Opcode::SRLIW),
+            "SRAIW" => Some(Opcode::SRAIW),
+            "ADDW" => Some(Opcode::ADDW),
             "SUBW" => Some(Opcode::SUBW),
+            "SLLW" => Some(Opcode::SLLW),
+            "SRLW" => Some(Opcode::SRLW),
+            "SRAW" => Some(Opcode::SRAW),
 
             "UNIMP" => Some(Opcode::UNIMP),
             _ => None,
@@ -246,7 +284,18 @@ impl Serialize for Opcode {
             Opcode::SRLI => "SRLI",
             Opcode::SRAI => "SRAI",
             Opcode::FENCE => "FENCE",
+            Opcode::LWU => "LWU",
+            Opcode::LD => "LD",
+            Opcode::SD => "SD",
+            Opcode::ADDIW => "ADDIW",
+            Opcode::SLLIW => "SLLIW",
+            Opcode::SRLIW => "SRLIW",
+            Opcode::SRAIW => "SRAIW",
+            Opcode::ADDW => "ADDW",
             Opcode::SUBW => "SUBW",
+            Opcode::SLLW => "SLLW",
+            Opcode::SRLW => "SRLW",
+            Opcode::SRAW => "SRAW",
         })
     }
 }
@@ -288,13 +337,22 @@ impl Opcode {
             | Opcode::DIVU
             | Opcode::REM
             | Opcode::REMU
-            | Opcode::SUBW => InstructionType::RType,
+            | Opcode::ADDW
+            | Opcode::SUBW
+            | Opcode::SLLW
+            | Opcode::SRLW
+            | Opcode::SRAW => InstructionType::RType,
             Opcode::BEQ | Opcode::BNE | Opcode::BGE | Opcode::BGEU | Opcode::BLT | Opcode::BLTU => {
                 InstructionType::BType
             }
-            Opcode::JAL | Opcode::LB | Opcode::LH | Opcode::LW | Opcode::LBU | Opcode::LHU => {
-                InstructionType::JType
-            }
+            Opcode::JAL
+            | Opcode::LB
+            | Opcode::LH
+            | Opcode::LW
+            | Opcode::LBU
+            | Opcode::LHU
+            | Opcode::LWU
+            | Opcode::LD => InstructionType::JType,
             Opcode::JALR
             | Opcode::ADDI
             | Opcode::SLTI
@@ -304,9 +362,13 @@ impl Opcode {
             | Opcode::ANDI
             | Opcode::SLLI
             | Opcode::SRLI
-            | Opcode::SRAI => InstructionType::IType,
+            | Opcode::SRAI
+            | Opcode::ADDIW
+            | Opcode::SLLIW
+            | Opcode::SRLIW
+            | Opcode::SRAIW => InstructionType::IType,
             Opcode::LUI | Opcode::AUIPC => InstructionType::UType,
-            Opcode::SB | Opcode::SH | Opcode::SW => InstructionType::SType,
+            Opcode::SB | Opcode::SH | Opcode::SW | Opcode::SD => InstructionType::SType,
 
             Opcode::FENCE => InstructionType::NOTYPE,
             Opcode::ECALL | Opcode::EBREAK => InstructionType::NOTYPE,
