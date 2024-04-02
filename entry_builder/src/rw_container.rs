@@ -67,6 +67,8 @@ pub struct RwContainer {
     /// Default to 32MB memory as ckb-vm may have flexible memory size.
     pub memory_values: Vec<u8>,
 
+    pub register: Vec<u64>,
+
     /// Temporary register to store the counter for operations within an instruction.
     pub rwc: u64,
 }
@@ -83,6 +85,7 @@ impl RwContainer {
             rw_memory_ops: Vec::new(),
             rw_register_ops: Vec::new(),
             memory_values: [0; 1024 * 1024 * 32].to_vec(),
+            register: [0; 32].to_vec(),
             rwc: 0,
         }
     }
@@ -92,6 +95,7 @@ impl RwContainer {
     }
 
     pub fn read_register(&mut self, gc: u64, index: u64, value: u64) {
+        assert_eq!(self.register[index as usize], value, "Read the wrong register value");
         let read_op = RwRegisterOp {
             global_clk: gc,
             rwc: self.rwc,
@@ -104,6 +108,7 @@ impl RwContainer {
     }
 
     pub fn write_register(&mut self, gc: u64, index: u64, value: u64) {
+        self.register[index as usize] = value;
         let write_op = RwRegisterOp {
             global_clk: gc,
             rwc: self.rwc,
@@ -302,9 +307,10 @@ impl RwContainer {
     }
 
     pub fn step_itype(&mut self, itype: IType, step: &Step) -> Result<(), Error> {
+        dbg!(step);
         let rd_index = step.instruction.op_a;
         let rs1 = step.registers[step.instruction.op_b as usize];
-        let imm = step.registers[step.instruction.op_c as usize];
+        let imm = step.instruction.op_c;
 
         let addr = Register::overflowing_add(&rs1, &u64::from_i32(imm as i32));
 
@@ -476,6 +482,7 @@ impl RwContainer {
     }
 
     pub fn step(&mut self, step: &Step) -> Result<(), Error> {
+        dbg!(step);
         self.rwc = 0;
         let opcode = step.instruction.opcode;
         match opcode.into() {

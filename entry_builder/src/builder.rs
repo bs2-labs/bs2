@@ -20,7 +20,11 @@ impl EntryBuilder {
     }
 
     pub fn build(&mut self, trace: &Trace) -> Result<(), Error> {
-        for (_index, step) in trace.steps.iter().enumerate() {
+        for (index, step) in trace.steps.iter().enumerate() {
+            // Register may not all be zero.
+            if index == 0 {
+                self.rw_container.register = step.registers.clone();
+            }
             // match step.instruction.opcode
             // TODO: store rw operations to container
             dbg!(&self.rw_container.rw_register_ops);
