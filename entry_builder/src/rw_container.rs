@@ -1,4 +1,4 @@
-use runtime::trace::{BType, IType, InstructionType, RType, SType, Step};
+use runtime::trace::{BType, IType, InstructionType, RType, SType, Step, UType};
 
 use core::fmt::Error;
 use std::{
@@ -7,6 +7,8 @@ use std::{
 };
 
 use byteorder::{LittleEndian, WriteBytesExt};
+
+use crate::Register;
 
 /// Marker that defines whether an Operation performs a `READ` or a `WRITE`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -144,7 +146,6 @@ impl RwContainer {
     }
 
     pub fn step_rtype(&mut self, rtype: RType, step: &Step) -> Result<(), Error> {
-        let opcode = step.instruction.opcode;
         let rs1_value = step.registers[step.instruction.op_b as usize];
         let rs2_value = step.registers[step.instruction.op_c as usize];
         let result = match rtype {
@@ -152,7 +153,7 @@ impl RwContainer {
             RType::SUB => rs1_value - rs2_value,
             RType::SUBW => {
                 let (value, _) = rs1_value.overflowing_sub(rs2_value);
-                (((value << 32) as i64) >> 32) as u64
+                value.sign_extend(&32)
             }
             RType::SLL => {
                 let shift_value = rs2_value.clone() & SHIFT_MASK;
@@ -386,19 +387,17 @@ impl RwContainer {
         Ok(())
     }
 
-    pub fn step_utype(&mut self, step: &Step) -> Result<(), Error> {
+    pub fn step_utype(&mut self, u: UType, step: &Step) -> Result<(), Error> {
         let imm = step.registers[step.instruction.op_a as usize];
-        let opcode = step.instruction.opcode;
 
-        let result = match opcode {
-            Opcode::LUI => imm as u64,
-            Opcode::AUIPC => step.pc + imm as u64,
-            _ => unimplemented!("Not implemented {:?}", step.instruction.opcode),
+        let result = match u {
+            UType::LUI => imm as u64,
+            UType::AUIPC => {
+                let new_pc = step.pc + imm as u64;
+                self.update_pc_register(step.global_clk, new_pc);
+                new_pc
+            }
         };
-
-        // read a, rwite b??
-        // read imm
-        self.read_register(step.global_clk, step.instruction.op_a, imm);
 
         // write rd
         self.write_register(step.global_clk, step.instruction.op_b, result);
@@ -410,11 +409,11 @@ impl RwContainer {
         self.rwc = 0;
         let opcode = step.instruction.opcode;
         match opcode.into() {
-            InstructionType::RType => self.step_rtype(step),
-            InstructionType::BType => self.step_btype(step),
-            InstructionType::SType => self.step_stype(step),
-            InstructionType::IType => self.step_itype(step),
-            InstructionType::UType => self.step_utype(step),
+            InstructionType::RType(r) => self.step_rtype(r, step),
+            InstructionType::BType(b) => self.step_btype(b, step),
+            InstructionType::SType(s) => self.step_stype(s, step),
+            InstructionType::IType(i) => self.step_itype(i, step),
+            InstructionType::UType(u) => self.step_utype(u, step),
             _ => {
                 unimplemented!("Not implemented {:?}", step.instruction.opcode);
             }
