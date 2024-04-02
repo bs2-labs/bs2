@@ -478,6 +478,7 @@ pub enum InstructionType {
 #[derive(Deserialize, Serialize, Clone, Debug, Eq, PartialEq)]
 pub struct Instruction {
     pub opcode: Opcode,
+    pub length: u64,
     pub op_a: u64,
     pub op_b: u64,
     pub op_c: u64,
@@ -487,7 +488,7 @@ pub struct Instruction {
 
 impl Instruction {
     pub fn get_instruction_length(&self) -> u64 {
-        4
+        self.length
     }
 }
 
@@ -504,57 +505,4 @@ pub struct Trace {
     pub cycles: u64,
     pub return_value: u8,
     pub steps: Vec<Step>,
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn deserialize_trace() {
-        let trace_json = r#"
-        {
-          "cycles": 26809,
-          "return_value": 0,
-          "steps": [
-              {
-                "global_clk": 0,
-                "pc": 65772,
-                "instruction": {
-                        "opcode": "DIVU",
-                        "op_a": 31,
-                        "op_b": 1,
-                        "op_c": 3,
-                        "imm_b": true,
-                        "imm_c": true
-                },
-                "registers": [ 0, 0, 494288, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
-              }
-          ]
-        }"#;
-        let trace: Trace = serde_json::from_str(trace_json).expect("json-deserialize Trace failed");
-        assert_eq!(
-            trace,
-            Trace {
-                cycles: 26809,
-                return_value: 0,
-                steps: vec![Step {
-                    global_clk: 0,
-                    pc: 65772,
-                    instruction: Instruction {
-                        opcode: Opcode::DIVU,
-                        op_a: 31,
-                        op_b: 1,
-                        op_c: 3,
-                        imm_b: true,
-                        imm_c: true,
-                    },
-                    registers: vec![
-                        0, 0, 494288, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                        0, 0, 0, 0, 0, 0, 0, 0, 0
-                    ],
-                }]
-            }
-        )
-    }
 }

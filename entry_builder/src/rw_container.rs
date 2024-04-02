@@ -508,8 +508,14 @@ impl RwContainer {
             self.register = step.registers.clone();
             self.should_copy_registers = false;
         } else {
-            for (index, (left, right)) in step.registers.iter().zip(self.register.clone()).enumerate() {
-                assert_eq!(*left, right, "Register {} is not the same", index)
+            for (index, (left, right)) in
+                step.registers.iter().zip(self.register.clone()).enumerate()
+            {
+                assert_eq!(
+                    *left, right,
+                    "Register {} is not the same in step {}",
+                    index, step.global_clk
+                )
             }
         }
 
