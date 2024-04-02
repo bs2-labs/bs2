@@ -1,4 +1,6 @@
 [workspace]
+resolver = "2"
+
 members = [
     "cli",
     "halo2",
@@ -10,10 +12,6 @@ members = [
     "circuits",
     "runtime",
 ]
-
-[profile.release.package.ckb_bf_verifier]
-debug = false
-strip = true
 
 [workspace.dependencies]
 rand = "0.8"
