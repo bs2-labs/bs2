@@ -1,62 +1,39 @@
-use halo2_proofs::arithmetic::Field;
+use crate::execution_table::op_configure::rtype::RTypeGadget;
+use halo2_proofs::arithmetic::{FieldExt, Field};
+use halo2_proofs::halo2curves::bn256::Fr;
+use halo2_proofs::plonk::Column;
+use halo2_proofs::plonk::Instance;
 use halo2_proofs::{
     circuit::{Layouter, SimpleFloorPlanner},
     plonk::{Circuit, ConstraintSystem, Error},
 };
-
 use std::marker::PhantomData;
 
-#[derive(Clone)]
-pub struct ExecutionTableConfig<F> {
-    pub a: u32,
-    _marker: PhantomData<F>,
-}
+pub mod op_configure;
 
 #[derive(Default, Clone)]
+pub struct Entries {}
+
+#[derive(Clone)]
 pub struct ExecutionTable<F> {
-    pub b: u32,
+    pub rtype: RTypeGadget<F>,
     _marker: PhantomData<F>,
 }
 
-impl<F: Field> ExecutionTable<F> {
-    pub fn new() -> Self {
+impl<F: FieldExt> ExecutionTable<F> {
+    pub fn configure(cs: &mut ConstraintSystem<F>) -> Self {
         Self {
-            b: 0,
+            rtype: RTypeGadget::configure(cs),
             _marker: PhantomData::default(),
         }
     }
 
-    pub fn instance(&self) -> Vec<Vec<F>> {
-        let mut instance = Vec::new();
-
-        instance
-    }
-}
-
-impl<F: Field> Circuit<F> for ExecutionTable<F> {
-    type Config = ExecutionTableConfig<F>;
-    type FloorPlanner = SimpleFloorPlanner;
-
-    fn without_witnesses(&self) -> Self {
-        Self::default()
-    }
-
-    fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
-        // let log_circuit_info = |meta: &ConstraintSystem<F>, tag: &str| {
-        //     log::debug!("circuit info after {}: {:#?}", tag, circuit_stats(meta));
-        // };
-        ExecutionTableConfig {
-            a: 0,
-            _marker: PhantomData::default(),
-        }
-    }
-
-    fn synthesize(
+    pub fn assign(
         &self,
-        config: Self::Config,
-        mut layouter: impl Layouter<F>,
+        layouter: &mut impl Layouter<F>,
+        entries: &Entries,
     ) -> Result<(), Error> {
-        log::debug!("assigning state_circuit");
+        self.rtype.assign(layouter, entries)?;
 
         Ok(())
     }

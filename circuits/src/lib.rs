@@ -1,4 +1,5 @@
-pub mod root;
+pub mod main_circuit;
+pub mod execution_table;
 
 use halo2_proofs::{
     dev::MockProver,
@@ -18,12 +19,13 @@ use halo2_proofs::{
 };
 use rand_core::SeedableRng;
 use rand_xorshift::XorShiftRng;
-use crate::root::RootCircuit;
+use crate::main_circuit::MainCircuit;
 
 pub fn prove() {
-    let degree = 12u32;
+    let degree = 4u32;
 
-    let circuit = RootCircuit::<Fr>::new();
+
+    let circuit = MainCircuit::<Fr>::new();
 
     let mut rng = XorShiftRng::from_seed([
         0x59, 0x62, 0xbe, 0x5d, 0x76, 0x3d, 0x31, 0x8d, 0x17, 0xdb, 0x37, 0x32, 0x54, 0x06, 0xbc,
@@ -45,7 +47,7 @@ pub fn prove() {
         Challenge255<G1Affine>,
         XorShiftRng,
         Blake2bWrite<Vec<u8>, G1Affine, Challenge255<G1Affine>>,
-        RootCircuit<Fr>,
+        MainCircuit<Fr>,
     >(
         &general_params,
         &pk,
