@@ -14,6 +14,8 @@ pub enum RW {
     WRITE,
 }
 
+const SHIFT_MASK: u64 = 0x3f;
+
 impl RW {
     /// Returns true if the RW corresponds internally to a [`READ`](RW::READ).
     pub const fn is_read(&self) -> bool {
@@ -145,6 +147,14 @@ impl RwContainer {
         let result = match opcode {
             Opcode::ADD => rs1_value + rs2_value,
             Opcode::SUB => rs1_value - rs2_value,
+            Opcode::SLL => {
+                let shift_value = rs2_value.clone() & SHIFT_MASK;
+                rs1_value.clone() << shift_value
+            },
+            Opcode::SRL => {
+                let shift_value = rs2_value.clone() & SHIFT_MASK;
+                rs1_value.clone() >> shift_value
+            },
             Opcode::SRA => rs1_value.clone() >> rs2_value,
             Opcode::SLT => (rs1_value < rs2_value).into(),
             Opcode::SLTU => (rs1_value < rs2_value).into(),
