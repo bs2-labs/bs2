@@ -421,6 +421,14 @@ sub_enum!(IType of Opcode {
     SLLIW,
     SRLIW,
     SRAIW,
+
+    LB,
+    LH,
+    LW,
+    LD,
+    LBU,
+    LHU,
+    LWU
 });
 
 sub_enum!(BType of Opcode {
@@ -441,13 +449,6 @@ sub_enum!(SType of Opcode {
 
 sub_enum!(JType of Opcode {
     JAL,
-    LB,
-    LH,
-    LW,
-    LD,
-    LBU,
-    LHU,
-    LWU
 });
 
 sub_enum!(UType of Opcode {

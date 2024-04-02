@@ -1,10 +1,9 @@
-use runtime::trace::{BType, IType, InstructionType, RType, SType, Step, UType};
+use runtime::trace::{BType, IType, InstructionType, JType, RType, SType, Step, UType};
 
 use core::fmt::Error;
 use std::{
     io::{Cursor, Seek, SeekFrom},
     ops::Shr,
-    result,
 };
 
 use byteorder::{LittleEndian, WriteBytesExt};
@@ -382,6 +381,28 @@ impl RwContainer {
                 let result = (result as u64).sign_extend(&32);
                 self.write_register(step.global_clk, rd_index, result as u64);
             }
+            IType::LB => todo!(),
+            IType::LH => todo!(),
+            IType::LW => todo!(),
+            IType::LD => todo!(),
+            IType::LBU => todo!(),
+            IType::LHU => todo!(),
+            IType::LWU => todo!(),
+        }
+        Ok(())
+    }
+
+    pub fn step_jtype(&mut self, jtype: JType, step: &Step) -> Result<(), Error> {
+        let rd_index = step.instruction.op_a;
+        let imm = step.registers[step.instruction.op_b as usize] as i32;
+
+        match jtype {
+            JType::JAL => {
+                let result = step.pc + step.instruction.get_instruction_length();
+                let next_pc = Register::overflowing_add(&step.pc, &u64::from_i32(imm.clone()));
+                self.write_register(step.global_clk, rd_index, result);
+                self.update_pc_register(step.global_clk, next_pc);
+            }
         }
         Ok(())
     }
@@ -432,6 +453,7 @@ impl RwContainer {
             InstructionType::BType(b) => self.step_btype(b, step),
             InstructionType::SType(s) => self.step_stype(s, step),
             InstructionType::IType(i) => self.step_itype(i, step),
+            InstructionType::JType(j) => self.step_jtype(j, step),
             InstructionType::UType(u) => self.step_utype(u, step),
             _ => {
                 unimplemented!("Not implemented {:?}", step.instruction.opcode);
