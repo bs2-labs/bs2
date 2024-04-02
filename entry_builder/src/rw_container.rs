@@ -1,4 +1,4 @@
-use runtime::trace::{InstructionType, Opcode, Step};
+use runtime::trace::{BType, IType, InstructionType, Opcode, RType, SType, Step};
 
 use core::fmt::Error;
 use std::{
@@ -143,51 +143,51 @@ impl RwContainer {
         }
     }
 
-    pub fn step_rtype(&mut self, step: &Step) -> Result<(), Error> {
+    pub fn step_rtype(&mut self, rtype: RType, step: &Step) -> Result<(), Error> {
         let opcode = step.instruction.opcode;
         let rs1_value = step.registers[step.instruction.op_b as usize];
         let rs2_value = step.registers[step.instruction.op_c as usize];
-        let result = match opcode {
-            Opcode::ADD => rs1_value + rs2_value,
-            Opcode::SUB => rs1_value - rs2_value,
-            Opcode::SUBW => {
+        let result = match rtype {
+            RType::ADD => rs1_value + rs2_value,
+            RType::SUB => rs1_value - rs2_value,
+            RType::SUBW => {
                 let (value, _) = rs1_value.overflowing_sub(rs2_value);
                 (((value << 32) as i64) >> 32) as u64
             }
-            Opcode::SLL => {
+            RType::SLL => {
                 let shift_value = rs2_value.clone() & SHIFT_MASK;
                 rs1_value.clone() << shift_value
             }
-            Opcode::SRL => {
+            RType::SRL => {
                 let shift_value = rs2_value.clone() & SHIFT_MASK;
                 rs1_value.clone() >> shift_value
             }
-            Opcode::SRA => rs1_value.clone() >> rs2_value,
-            Opcode::SLT => (rs1_value < rs2_value).into(),
-            Opcode::SLTU => (rs1_value < rs2_value).into(),
-            Opcode::XOR => rs1_value ^ rs2_value,
-            Opcode::OR => rs1_value | rs2_value,
-            Opcode::AND => rs1_value & rs2_value,
-            Opcode::MUL => rs1_value.overflowing_mul(rs2_value).0,
-            Opcode::MULH => {
+            RType::SRA => rs1_value.clone() >> rs2_value,
+            RType::SLT => (rs1_value < rs2_value).into(),
+            RType::SLTU => (rs1_value < rs2_value).into(),
+            RType::XOR => rs1_value ^ rs2_value,
+            RType::OR => rs1_value | rs2_value,
+            RType::AND => rs1_value & rs2_value,
+            RType::MUL => rs1_value.overflowing_mul(rs2_value).0,
+            RType::MULH => {
                 let a = i128::from(rs1_value as i64);
                 let b = i128::from(rs2_value as i64);
                 let (value, _) = a.overflowing_mul(b);
                 (value >> 64) as u64
             }
-            Opcode::MULHU => {
+            RType::MULHU => {
                 let a = u128::from(rs1_value);
                 let b = u128::from(rs2_value);
                 let (value, _) = a.overflowing_mul(b);
                 (value >> 64) as u64
             }
-            Opcode::MULHSU => {
+            RType::MULHSU => {
                 let a = i128::from(rs1_value as i64);
                 let b = i128::from(rs2_value);
                 let (value, _) = a.overflowing_mul(b);
                 (value >> 64) as u64
             }
-            Opcode::DIV => {
+            RType::DIV => {
                 // rs1_value.overflowing_div_signed(rs2_value);
                 if rs1_value == 0 {
                     u64::max_value()
@@ -195,7 +195,7 @@ impl RwContainer {
                     rs1_value.overflowing_div(rs2_value).0
                 }
             }
-            Opcode::DIVU => {
+            RType::DIVU => {
                 // rs1_value.overflowing_div(rs2_value);
                 if rs2_value == 0 {
                     (-1i64) as u64
@@ -209,7 +209,7 @@ impl RwContainer {
                     }
                 }
             }
-            Opcode::REM => {
+            RType::REM => {
                 // rs1_value.overflowing_rem_signed(rs2_value);
                 if rs2_value == 0 {
                     rs1_value
@@ -217,7 +217,7 @@ impl RwContainer {
                     (rs1_value).overflowing_rem(rs2_value).0
                 }
             }
-            Opcode::REMU => {
+            RType::REMU => {
                 // rs1_value.overflowing_rem(rs2_value);
                 if rs2_value == 0 {
                     rs1_value
@@ -253,21 +253,20 @@ impl RwContainer {
         (rs1, rs2, imm)
     }
 
-    pub fn step_stype(&mut self, step: &Step) -> Result<(), Error> {
+    pub fn step_stype(&mut self, stype: SType, step: &Step) -> Result<(), Error> {
         let (rs1, rs2, imm) = self.step_stype_or_btype(step);
-        let opcode = step.instruction.opcode;
 
         let (addr, _) = (rs1 as i64).overflowing_add(imm as i64);
         let addr = addr as u64;
         let value = rs2;
-        match opcode {
-            Opcode::SB => {
+        match stype {
+            SType::SB => {
                 self.write_memory(step.global_clk, addr, value, 8);
             }
-            Opcode::SH => {
+            SType::SH => {
                 self.write_memory(step.global_clk, addr, value, 16);
             }
-            Opcode::SW => {
+            SType::SW => {
                 self.write_memory(step.global_clk, addr, value, 32);
             }
             _ => panic!("Not implemented {:?}", step.instruction.opcode),
@@ -275,65 +274,64 @@ impl RwContainer {
         Ok(())
     }
 
-    pub fn step_itype(&mut self, step: &Step) -> Result<(), Error> {
+    pub fn step_itype(&mut self, itype: IType, step: &Step) -> Result<(), Error> {
         let rd_index = step.instruction.op_a;
         let rs1 = step.registers[step.instruction.op_b as usize];
         let imm = step.registers[step.instruction.op_c as usize];
-        let opcode = step.instruction.opcode;
 
-        match opcode {
-            Opcode::JALR => {
+        match itype {
+            IType::JALR => {
                 let result = step.pc + step.instruction.get_instruction_length();
                 let next_pc = rs1 + imm;
                 let next_pc = next_pc;
                 self.write_register(step.global_clk, rd_index, result);
                 self.update_pc_register(step.global_clk, next_pc);
             }
-            Opcode::ADDI => {
+            IType::ADDI => {
                 let rs1 = rs1 as i64;
                 let imm = imm as i64;
                 let result = rs1 + imm;
                 self.write_register(step.global_clk, rd_index, result as u64);
             }
-            Opcode::SLTI => {
+            IType::SLTI => {
                 let result = (rs1 as i64) < (imm as i64);
                 self.write_register(step.global_clk, rd_index, result as u64);
             }
-            Opcode::SLTIU => {
+            IType::SLTIU => {
                 let result = (rs1 as u64) < (imm as u64);
                 self.write_register(step.global_clk, rd_index, result as u64);
             }
-            Opcode::XORI => {
+            IType::XORI => {
                 let rs1 = rs1 as i64;
                 let imm = imm as i64;
                 let result = rs1 ^ imm;
                 self.write_register(step.global_clk, rd_index, result as u64);
             }
-            Opcode::ORI => {
+            IType::ORI => {
                 let rs1 = rs1 as i64;
                 let imm = imm as i64;
                 let result = rs1 | imm;
                 self.write_register(step.global_clk, rd_index, result as u64);
             }
-            Opcode::ANDI => {
+            IType::ANDI => {
                 let rs1 = rs1 as i64;
                 let imm = imm as i64;
                 let result = rs1 & imm;
                 self.write_register(step.global_clk, rd_index, result as u64);
             }
-            Opcode::SLLI => {
+            IType::SLLI => {
                 let rs1 = rs1 as u64;
                 let imm = imm as u64;
                 let result = rs1 << imm;
                 self.write_register(step.global_clk, rd_index, result as u64);
             }
-            Opcode::SRLI => {
+            IType::SRLI => {
                 let rs1 = rs1 as u64;
                 let imm = imm as u64;
                 let result = rs1 >> imm;
                 self.write_register(step.global_clk, rd_index, result as u64);
             }
-            Opcode::SRAI => {
+            IType::SRAI => {
                 let rs1 = rs1 as i64;
                 let imm = imm as u64;
                 let result = rs1.shr(imm);
@@ -344,18 +342,16 @@ impl RwContainer {
         Ok(())
     }
 
-    pub fn step_btype(&mut self, step: &Step) -> Result<(), Error> {
+    pub fn step_btype(&mut self, btype: BType, step: &Step) -> Result<(), Error> {
         let (rs1, rs2, imm) = self.step_stype_or_btype(step);
-        let opcode = step.instruction.opcode;
 
-        let new_pc = if match opcode {
-            Opcode::BEQ => rs1 as i64 == rs2 as i64,
-            Opcode::BNE => rs1 as i64 != rs2 as i64,
-            Opcode::BGE => rs1 as i64 >= rs2 as i64,
-            Opcode::BGEU => rs1 as u64 >= rs2 as u64,
-            Opcode::BLT => (rs1 as i64) < (rs2 as i64),
-            Opcode::BLTU => (rs1 as u64) < (rs2 as u64),
-            _ => unimplemented!("Not implemented {:?}", step.instruction.opcode),
+        let new_pc = if match btype {
+            BType::BEQ => rs1 as i64 == rs2 as i64,
+            BType::BNE => rs1 as i64 != rs2 as i64,
+            BType::BGE => rs1 as i64 >= rs2 as i64,
+            BType::BGEU => rs1 as u64 >= rs2 as u64,
+            BType::BLT => (rs1 as i64) < (rs2 as i64),
+            BType::BLTU => (rs1 as u64) < (rs2 as u64),
         } {
             step.pc + imm as u64
         } else {
@@ -370,10 +366,10 @@ impl RwContainer {
         self.rwc = 0;
         let opcode = step.instruction.opcode;
         match opcode.into() {
-            InstructionType::RType(_) => self.step_rtype(step),
-            InstructionType::BType(_) => self.step_btype(step),
-            InstructionType::SType(_) => self.step_stype(step),
-            InstructionType::IType(_) => self.step_itype(step),
+            InstructionType::RType(r) => self.step_rtype(r, step),
+            InstructionType::BType(b) => self.step_btype(b, step),
+            InstructionType::SType(s) => self.step_stype(s, step),
+            InstructionType::IType(i) => self.step_itype(i, step),
             _ => {
                 unimplemented!("Not implemented {:?}", step.instruction.opcode);
             }
