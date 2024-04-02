@@ -4,6 +4,7 @@ use core::fmt::Error;
 use std::{
     io::{Cursor, Seek, SeekFrom},
     ops::Shr,
+    result,
 };
 
 use byteorder::{LittleEndian, WriteBytesExt};
@@ -343,24 +344,28 @@ impl RwContainer {
                 let rs1 = rs1 as u64;
                 let imm = imm as u64;
                 let result = rs1 << imm;
+                let result = result.sign_extend(&32);
                 self.write_register(step.global_clk, rd_index, result as u64);
             }
             IType::ADDIW => {
                 let rs1 = rs1 as i64;
                 let imm = imm as i64;
                 let result = rs1 + imm;
+                let result = (result as u64).sign_extend(&32);
                 self.write_register(step.global_clk, rd_index, result as u64);
             }
             IType::SRLIW => {
                 let rs1 = rs1 as u64;
                 let imm = imm as u64;
                 let result = rs1 >> imm;
+                let result = (result as u64).sign_extend(&32);
                 self.write_register(step.global_clk, rd_index, result as u64);
             }
             IType::SRAIW => {
                 let rs1 = rs1 as i64;
                 let imm = imm as u64;
                 let result = rs1.shr(imm);
+                let result = (result as u64).sign_extend(&32);
                 self.write_register(step.global_clk, rd_index, result as u64);
             }
         }
