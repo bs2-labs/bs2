@@ -232,7 +232,21 @@ impl RwContainer {
                     }
                 }
             }
-            _ => unimplemented!("Not implemented {:?}", step.instruction.opcode),
+            RType::ADDW => (rs1_value + rs2_value).sign_extend(&32),
+            RType::SLLW => {
+                let shift_value = rs2_value.clone() & SHIFT_MASK;
+                let result = rs1_value.clone() << shift_value;
+                result.sign_extend(&32)
+            }
+            RType::SRLW => {
+                let shift_value = rs2_value.clone() & SHIFT_MASK;
+                let result = rs1_value.clone() >> shift_value;
+                result.sign_extend(&32)
+            }
+            RType::SRAW => {
+                let result = rs1_value.clone() >> rs2_value;
+                result.sign_extend(&32)
+            }
         };
         // read rs1
         self.read_register(step.global_clk, step.instruction.op_b, rs1_value);
