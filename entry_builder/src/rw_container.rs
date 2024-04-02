@@ -362,14 +362,35 @@ impl RwContainer {
         Ok(())
     }
 
+    pub fn step_utype(&mut self, step: &Step) -> Result<(), Error> {
+        let imm = step.registers[step.instruction.op_a as usize];
+        let opcode = step.instruction.opcode;
+
+        let result = match opcode {
+            Opcode::LUI => imm as u64,
+            Opcode::AUIPC => step.pc + imm as u64,
+            _ => unimplemented!("Not implemented {:?}", step.instruction.opcode),
+        };
+
+        // read a, rwite b??
+        // read imm
+        self.read_register(step.global_clk, step.instruction.op_a, imm);
+
+        // write rd
+        self.write_register(step.global_clk, step.instruction.op_b, result);
+
+        Ok(())
+    }
+
     pub fn step(&mut self, step: &Step) -> Result<(), Error> {
         self.rwc = 0;
         let opcode = step.instruction.opcode;
         match opcode.into() {
-            InstructionType::RType(r) => self.step_rtype(r, step),
-            InstructionType::BType(b) => self.step_btype(b, step),
-            InstructionType::SType(s) => self.step_stype(s, step),
-            InstructionType::IType(i) => self.step_itype(i, step),
+            InstructionType::RType => self.step_rtype(step),
+            InstructionType::BType => self.step_btype(step),
+            InstructionType::SType => self.step_stype(step),
+            InstructionType::IType => self.step_itype(step),
+            InstructionType::UType => self.step_utype(step),
             _ => {
                 unimplemented!("Not implemented {:?}", step.instruction.opcode);
             }
