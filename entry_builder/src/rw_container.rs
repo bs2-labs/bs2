@@ -67,6 +67,8 @@ pub struct RwContainer {
     /// Default to 32MB memory as ckb-vm may have flexible memory size.
     pub memory_values: Vec<u8>,
 
+    pub should_copy_registers: bool,
+
     pub register: Vec<u64>,
 
     /// Temporary register to store the counter for operations within an instruction.
@@ -84,6 +86,8 @@ impl RwContainer {
         Self {
             rw_memory_ops: Vec::new(),
             rw_register_ops: Vec::new(),
+            // Some registers has initial state, so we need to copy them at first.
+            should_copy_registers: true,
             memory_values: [0; 1024 * 1024 * 32].to_vec(),
             register: [0; 32].to_vec(),
             rwc: 0,
@@ -95,7 +99,10 @@ impl RwContainer {
     }
 
     pub fn read_register(&mut self, gc: u64, index: u64, value: u64) {
-        assert_eq!(self.register[index as usize], value, "Read the wrong register value");
+        assert_eq!(
+            self.register[index as usize], value,
+            "Read the wrong register value"
+        );
         let read_op = RwRegisterOp {
             global_clk: gc,
             rwc: self.rwc,
@@ -329,7 +336,7 @@ impl RwContainer {
             }
             IType::ADDI => {
                 let rs1 = rs1 as i64;
-                let imm = imm as i64;
+                let imm = imm.sign_extend(&32) as i64;
                 let result = rs1 + imm;
                 self.write_register(step.global_clk, rd_index, result as u64);
             }
@@ -411,7 +418,7 @@ impl RwContainer {
             IType::LH | IType::LHU => {
                 self.read_memory(step.global_clk, addr, 16);
             }
-            IType::LW | IType::LWU=> {
+            IType::LW | IType::LWU => {
                 self.read_memory(step.global_clk, addr, 32);
             }
             IType::LD => {
@@ -457,7 +464,7 @@ impl RwContainer {
     }
 
     pub fn step_utype(&mut self, u: UType, step: &Step) -> Result<(), Error> {
-        let imm = step.instruction.op_a as u64;
+        let imm = step.instruction.op_b as u64;
 
         let result = match u {
             UType::LUI => imm as u64,
@@ -469,7 +476,7 @@ impl RwContainer {
         };
 
         // write rd
-        self.write_register(step.global_clk, step.instruction.op_b, result);
+        self.write_register(step.global_clk, step.instruction.op_a, result);
 
         Ok(())
     }
@@ -477,7 +484,9 @@ impl RwContainer {
     pub fn step_notype(&mut self, n: NoType, _step: &Step) -> Result<(), Error> {
         match n {
             NoType::FENCE => (),
-            NoType::ECALL => (),
+            NoType::ECALL => {
+                self.should_copy_registers = true;
+            }
             NoType::EBREAK => todo!(),
             NoType::UNIMP => todo!(),
         };
@@ -489,6 +498,11 @@ impl RwContainer {
         dbg!(step);
         self.rwc = 0;
         let opcode = step.instruction.opcode;
+        if self.should_copy_registers {
+            self.register = step.registers.clone();
+            self.should_copy_registers = false;
+        }
+
         match opcode.into() {
             InstructionType::RType(r) => self.step_rtype(r, step),
             InstructionType::BType(b) => self.step_btype(b, step),

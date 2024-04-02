@@ -20,11 +20,7 @@ impl EntryBuilder {
     }
 
     pub fn build(&mut self, trace: &Trace) -> Result<(), Error> {
-        for (index, step) in trace.steps.iter().enumerate() {
-            // Register may not all be zero.
-            if index == 0 {
-                self.rw_container.register = step.registers.clone();
-            }
+        for (_index, step) in trace.steps.iter().enumerate() {
             // match step.instruction.opcode
             // TODO: store rw operations to container
             dbg!(&self.rw_container.rw_register_ops);
@@ -39,8 +35,7 @@ impl EntryBuilder {
 mod tests {
     use std::{fs::File, io::BufReader};
 
-    use runtime::trace::{self, Step, Trace};
-    use serde_json::map::Entry;
+    use runtime::trace::{Step, Trace};
 
     use super::EntryBuilder;
 
