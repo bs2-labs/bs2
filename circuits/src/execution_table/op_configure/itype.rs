@@ -1,6 +1,6 @@
 use core::marker::PhantomData;
-use runtime::trace::Opcode;
 use entry_builder::op_step::OpStep;
+use runtime::trace::Opcode;
 
 use halo2_proofs::arithmetic::FieldExt;
 use halo2_proofs::circuit::{AssignedCell, Layouter, Value};
@@ -57,10 +57,10 @@ impl<F: FieldExt> ITypeGadget<F> {
                 let rs1 = step.instruction.op_b;
                 let imm = step.instruction.op_c;
 
-                let rd_value = step.register_indexes.unwrap().read(rd).unwrap();
+                dbg!(step, rd, rs1, imm);
+                let rd_value = step.register_indexes.unwrap().write(rd).unwrap();
                 let rs1_value = step.register_indexes.unwrap().read(rs1).unwrap();
                 // todo: whether to ignore it
-                let imm_value = step.register_indexes.unwrap().read(imm).unwrap();
 
                 region.assign_advice(
                     || "lhs",
@@ -69,12 +69,7 @@ impl<F: FieldExt> ITypeGadget<F> {
                     || Value::known(F::from(rs1_value)),
                 )?;
 
-                region.assign_advice(
-                    || "rhs",
-                    self.rhs_col,
-                    0,
-                    || Value::known(F::from(imm)),
-                )?;
+                region.assign_advice(|| "rhs", self.rhs_col, 0, || Value::known(F::from(imm)))?;
 
                 region.assign_advice(
                     || "output",

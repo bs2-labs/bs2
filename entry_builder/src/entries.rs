@@ -387,7 +387,9 @@ impl Entries {
     pub fn step_itype(&mut self, itype: IType, step: &Step) -> Result<(), Error> {
         dbg!(step);
         let rd_index = step.instruction.op_a;
-        let rs1 = step.registers[step.instruction.op_b as usize];
+        let rs1_index: usize = step.instruction.op_b as usize;
+        let rs1 = step.registers[rs1_index];
+        self.read_register(step.global_clk, step.instruction.op_b, rs1);
         let imm = step.instruction.op_c;
 
         let addr = Register::overflowing_add(&rs1, &u64::from_i32(imm as i32));
