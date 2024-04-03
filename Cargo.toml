@@ -11,6 +11,7 @@ members = [
     "entry_builder",
     "circuits",
     "runtime",
+    "verifier",
 ]
 
 [workspace.dependencies]
