@@ -1,5 +1,5 @@
 use core::marker::PhantomData;
-use entry_builder::entries::Entries;
+use runtime::trace::Opcode;
 use entry_builder::op_step::OpStep;
 
 use halo2_proofs::arithmetic::FieldExt;
@@ -409,10 +409,13 @@ impl<F: FieldExt> RTypeGadget<F> {
             |mut region| {
 
                 // let rs1_value = step.registers.find(|x| x.index== rs1&& x.rw == RW::READ).unwrap();
-
-                let rs1_value = val_vec[0].value;
-                let rs2_value = val_vec[1].value;
-                let rd_value = val_vec[2].value;
+                let val_vec = step.register_indexes;
+                let rs1 = step.instruction.op_b;
+                let rs2 = step.instruction.op_c;
+                let rd = step.instruction.op_a;
+                let rs1_value = step.register_indexes.unwrap().read(rs1).unwrap();
+                let rs2_value = step.register_indexes.unwrap().read(rs2).unwrap();
+                let rd_value = step.register_indexes.unwrap().read(rd).unwrap();
 
                 region.assign_advice(
                     || "lhs",
@@ -435,99 +438,101 @@ impl<F: FieldExt> RTypeGadget<F> {
                     || Value::known(F::from(rd_value)),
                 )?;
                 match step.instruction.opcode.into() {
-                    RType::ADD => {
+                    Opcode::ADD => {
                         let selector = self.s_add;
                         selector.enable(&mut region, 0)?;
                     }
-                    RType::SUB => {
+                    Opcode::SUB => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
                     }
-                    RType::SUBW => {
+                    Opcode::SUBW => {
                         let selector = self.s_subw;
                         selector.enable(&mut region, 0)?;
                     }
-                    RType::SLL => {
+                    Opcode::SLL => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
                     }
-                    RType::SRL => {
+                    Opcode::SRL => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
 
                     }
-                    RType::SRA => {
+                    Opcode::SRA => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
                     }
-                    RType::SLT => {
+                    Opcode::SLT => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
                     }
-                    RType::SLTU => {
+                    Opcode::SLTU => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
                     }
-                    RType::XOR => {
+                    Opcode::XOR => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
                     }
-                    RType::OR => {
+                    Opcode::OR => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
                     }
-                    RType::AND => {
+                    Opcode::AND => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
                     }
-                    RType::MUL => {
+                    Opcode::MUL => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
                     }
-                    RType::MULH => {
+                    Opcode::MULH => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
                     }
-                    RType::MULHU => {
+                    Opcode::MULHU => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
                     }
-                    RType::MULHSU => {
+                    Opcode::MULHSU => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
                     }
-                    RType::DIV => {
+                    Opcode::DIV => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
                     }
-                    RType::DIVU => {
+                    Opcode::DIVU => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
                     }
-                    RType::REM => {
+                    Opcode::REM => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
                     }
-                    RType::REMU => {
+                    Opcode::REMU => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
                     }
-                    RType::ADDW => {
+                    Opcode::ADDW => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
                     }
-                    RType::SLLW => {
+                    Opcode::SLLW => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
                     }
-                    RType::SRLW => {
+                    Opcode::SRLW => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
                     }
-                    RType::SRAW => {
+                    Opcode::SRAW => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
                     }
+                    _ => panic!("Not implemented {:?}", step.instruction.opcode),
+
                 };
                 // todo: assign selector value to some position
 
