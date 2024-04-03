@@ -11,19 +11,19 @@ use halo2_proofs::poly::Rotation;
 pub struct ACell<F: FieldExt>(pub AssignedCell<F, F>);
 
 #[derive(Clone)]
-pub struct ITypeGadget<F> {
+pub struct BTypeGadget<F> {
     pub lhs_col: Column<Advice>,
     pub rhs_col: Column<Advice>,
-    s_addi: Selector,
+    s_beq: Selector,
     _maker: PhantomData<F>,
 }
 
-impl<F: FieldExt> ITypeGadget<F> {
+impl<F: FieldExt> BTypeGadget<F> {
     pub fn configure(
         cs: &mut ConstraintSystem<F>,
         lhs_col: Column<Advice>,
         rhs_col: Column<Advice>,
-        s_addi: Selector,
+        s_beq: Selector,
     ) -> Self {
         // let lhs_col = cs.advice_column();
         // let rhs_col = cs.advice_column();
@@ -32,11 +32,11 @@ impl<F: FieldExt> ITypeGadget<F> {
 
         // todo: constrain selector: s1 + s1 + .. + sn = 1
 
-        cs.create_gate("IType::ADDI", |vc| {
+        cs.create_gate("BType::BEQ", |vc| {
             let lhs = vc.query_advice(lhs_col, Rotation::cur());
             let rhs = vc.query_advice(rhs_col, Rotation::cur());
             let out = vc.query_advice(lhs_col, Rotation::next());
-            let s = vc.query_selector(s_addi);
+            let s = vc.query_selector(s_beq);
             // let (value, _) = rs1_value.overflowing_sub(rs2_value);
             vec![s * (lhs + rhs - out)]
         });
@@ -44,14 +44,14 @@ impl<F: FieldExt> ITypeGadget<F> {
         Self {
             lhs_col,
             rhs_col,
-            s_addi,
+            s_beq,
             _maker: PhantomData::default(),
         }
     }
 
     pub fn assign(&self, layouter: &mut impl Layouter<F>, step: &OpStep) -> Result<(), Error> {
         layouter.assign_region(
-            || "IType",
+            || "BType",
             |mut region| {
                 // todo
                 let rs1 = step.instruction.op_b;
@@ -83,7 +83,7 @@ impl<F: FieldExt> ITypeGadget<F> {
                 )?;
 
                 match step.instruction.opcode.into() {
-                    Opcode::ADDI => self.s_addi.enable(&mut region, 0)?,
+                    Opcode::ADDI => self.s_beq.enable(&mut region, 0)?,
                     _ => panic!("Not implemented {:?}", step.instruction.opcode),
                 };
                 Ok(())

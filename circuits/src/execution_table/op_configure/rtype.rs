@@ -6,7 +6,6 @@ use halo2_proofs::arithmetic::FieldExt;
 use halo2_proofs::circuit::{AssignedCell, Layouter, Value};
 use halo2_proofs::plonk::*;
 use halo2_proofs::poly::Rotation;
-use runtime::trace::{BType, IType, InstructionType, JType, NoType, RType, SType, Step, UType};
 
 #[derive(Debug, Clone)]
 pub struct ACell<F: FieldExt>(pub AssignedCell<F, F>);

@@ -1,5 +1,5 @@
 use core::marker::PhantomData;
-use entry_builder::entries::Entries;
+use runtime::trace::Opcode;
 use entry_builder::op_step::OpStep;
 
 use halo2_proofs::arithmetic::FieldExt;
@@ -14,8 +14,7 @@ pub struct ACell<F: FieldExt>(pub AssignedCell<F, F>);
 pub struct JTypeGadget<F> {
     pub lhs_col: Column<Advice>,
     pub rhs_col: Column<Advice>,
-    s_add: Selector,
-    s_sub: Selector,
+    s_jal: Selector,
     _maker: PhantomData<F>,
 }
 
@@ -24,55 +23,69 @@ impl<F: FieldExt> JTypeGadget<F> {
         cs: &mut ConstraintSystem<F>,
         lhs_col: Column<Advice>,
         rhs_col: Column<Advice>,
-        s_add: Selector,
-        s_sub: Selector,
+        s_jal: Selector,
     ) -> Self {
+        // let lhs_col = cs.advice_column();
+        // let rhs_col = cs.advice_column();
         cs.enable_equality(lhs_col);
         cs.enable_equality(rhs_col);
 
-        cs.create_gate("add", |vc| {
-            let lhs = vc.query_advice(lhs_col, Rotation::cur());
-            let rhs = vc.query_advice(rhs_col, Rotation::cur());
-            let out = vc.query_advice(lhs_col, Rotation::next());
-            let s = vc.query_selector(s_add);
-            vec![s * (lhs + rhs - out)]
-        });
+        // todo: constrain selector: s1 + s1 + .. + sn = 1
 
-        cs.create_gate("sub", |vc| {
+        cs.create_gate("JType::JAL", |vc| {
             let lhs = vc.query_advice(lhs_col, Rotation::cur());
             let rhs = vc.query_advice(rhs_col, Rotation::cur());
             let out = vc.query_advice(lhs_col, Rotation::next());
-            let s = vc.query_selector(s_sub);
-            vec![s * (lhs - rhs - out)]
+            let s = vc.query_selector(s_jal);
+            // let (value, _) = rs1_value.overflowing_sub(rs2_value);
+            vec![s * (lhs + rhs - out)]
         });
 
         Self {
             lhs_col,
             rhs_col,
-            s_add,
-            s_sub,
+            s_jal,
             _maker: PhantomData::default(),
         }
     }
 
     pub fn assign(&self, layouter: &mut impl Layouter<F>, step: &OpStep) -> Result<(), Error> {
         layouter.assign_region(
-            || "jtype",
+            || "JType",
             |mut region| {
-                let s_add = self.s_add;
-                s_add.enable(&mut region, 0)?;
+                // todo
+                let rs1 = step.instruction.op_b;
+                let rs2 = step.instruction.op_c;
+                let rd = step.instruction.op_a;
+                let rs1_value = step.register_indexes.unwrap().read(rs1).unwrap();
+                let rs2_value = step.register_indexes.unwrap().read(rs2).unwrap();
+                let rd_value = step.register_indexes.unwrap().read(rd).unwrap();
 
-                region.assign_advice(|| "lhs", self.lhs_col, 0, || Value::known(F::from(100)))?;
+                region.assign_advice(
+                    || "lhs",
+                    self.lhs_col,
+                    0,
+                    || Value::known(F::from(rs1_value)),
+                )?;
 
-                region.assign_advice(|| "rhs", self.rhs_col, 0, || Value::known(F::from(20)))?;
+                region.assign_advice(
+                    || "rhs",
+                    self.rhs_col,
+                    0,
+                    || Value::known(F::from(rs2_value)),
+                )?;
 
                 region.assign_advice(
                     || "output",
                     self.lhs_col,
                     1,
-                    || Value::known(F::from(120)),
+                    || Value::known(F::from(rd_value)),
                 )?;
 
+                match step.instruction.opcode.into() {
+                    Opcode::ADDI => self.s_jal.enable(&mut region, 0)?,
+                    _ => panic!("Not implemented {:?}", step.instruction.opcode),
+                };
                 Ok(())
             },
         )

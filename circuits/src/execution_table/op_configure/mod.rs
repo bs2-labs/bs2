@@ -1,3 +1,4 @@
+pub mod btype;
 pub mod rtype;
 pub mod itype;
 pub mod jtype;
