@@ -25,8 +25,6 @@ impl<F: FieldExt> JTypeGadget<F> {
         rhs_col: Column<Advice>,
         s_jal: Selector,
     ) -> Self {
-        // let lhs_col = cs.advice_column();
-        // let rhs_col = cs.advice_column();
         cs.enable_equality(lhs_col);
         cs.enable_equality(rhs_col);
 
@@ -54,38 +52,38 @@ impl<F: FieldExt> JTypeGadget<F> {
             || "JType",
             |mut region| {
                 // todo
-                let rs1 = step.instruction.op_b;
-                let rs2 = step.instruction.op_c;
-                let rd = step.instruction.op_a;
-                let rs1_value = step.register_indexes.unwrap().read(rs1).unwrap();
-                let rs2_value = step.register_indexes.unwrap().read(rs2).unwrap();
-                let rd_value = step.register_indexes.unwrap().read(rd).unwrap();
+                // let rs1 = step.instruction.op_b;
+                // let rs2 = step.instruction.op_c;
+                // let rd = step.instruction.op_a;
+                // let rs1_value = step.register_indexes.unwrap().read(rs1).unwrap();
+                // let rs2_value = step.register_indexes.unwrap().read(rs2).unwrap();
+                // let rd_value = step.register_indexes.unwrap().write(rd).unwrap();
 
-                region.assign_advice(
-                    || "lhs",
-                    self.lhs_col,
-                    0,
-                    || Value::known(F::from(rs1_value)),
-                )?;
+                // region.assign_advice(
+                //     || "lhs",
+                //     self.lhs_col,
+                //     0,
+                //     || Value::known(F::from(rs1_value)),
+                // )?;
 
-                region.assign_advice(
-                    || "rhs",
-                    self.rhs_col,
-                    0,
-                    || Value::known(F::from(rs2_value)),
-                )?;
+                // region.assign_advice(
+                //     || "rhs",
+                //     self.rhs_col,
+                //     0,
+                //     || Value::known(F::from(rs2_value)),
+                // )?;
 
-                region.assign_advice(
-                    || "output",
-                    self.lhs_col,
-                    1,
-                    || Value::known(F::from(rd_value)),
-                )?;
+                // region.assign_advice(
+                //     || "output",
+                //     self.lhs_col,
+                //     1,
+                //     || Value::known(F::from(rd_value)),
+                // )?;
 
-                match step.instruction.opcode.into() {
-                    Opcode::JAL => self.s_jal.enable(&mut region, 0)?,
-                    _ => panic!("Not implemented {:?}", step.instruction.opcode),
-                };
+                // match step.instruction.opcode.into() {
+                //     Opcode::JAL => self.s_jal.enable(&mut region, 0)?,
+                //     _ => panic!("Not implemented {:?}", step.instruction.opcode),
+                // };
                 Ok(())
             },
         )

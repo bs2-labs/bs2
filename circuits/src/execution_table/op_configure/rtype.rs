@@ -70,7 +70,7 @@ impl<F: FieldExt> RTypeGadget<F> {
                 let rd = step.instruction.op_a;
                 let rs1_value = step.register_indexes.unwrap().read(rs1).unwrap();
                 let rs2_value = step.register_indexes.unwrap().read(rs2).unwrap();
-                let rd_value = step.register_indexes.unwrap().read(rd).unwrap();
+                let rd_value = step.register_indexes.unwrap().write(rd).unwrap();
 
                 region.assign_advice(
                     || "lhs",
@@ -96,7 +96,7 @@ impl<F: FieldExt> RTypeGadget<F> {
                 match step.instruction.opcode.into() {
                     Opcode::ADD => self.s_add.enable(&mut region, 0)?,
                     Opcode::SUB => self.s_sub.enable(&mut region, 0)?,
-                    _ => panic!("Not implemented {:?}", step.instruction.opcode),
+                    _ => {}, // TODO
                 };
                 Ok(())
             },

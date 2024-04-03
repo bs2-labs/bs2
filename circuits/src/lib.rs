@@ -2,6 +2,7 @@ pub mod execution_table;
 pub mod main_circuit;
 pub mod memory_table;
 
+use halo2_proofs::dev::MockProver;
 use crate::main_circuit::MainCircuit;
 use entry_builder::builder::EntryBuilder;
 use halo2_proofs::{
@@ -35,11 +36,20 @@ pub fn prove(trace_path: &str) {
         steps,
     };
     entry_builder.build(&trace).expect("build entry failed");
-    // dbg!(entry_builder.entries.get_op_steps());
 
-    let degree = 4u32;
+
+    let degree = 14u32;
 
     let circuit = MainCircuit::<Fr>::init(entry_builder.entries);
+
+    // let prover = MockProver::<Fr>::run(degree, &circuit, vec![]).unwrap();
+    // let verify_result = prover.verify();
+
+    // dbg!(verify_result);
+
+    // return;
+
+    // -----
 
     let mut rng = XorShiftRng::from_seed([
         0x59, 0x62, 0xbe, 0x5d, 0x76, 0x3d, 0x31, 0x8d, 0x17, 0xdb, 0x37, 0x32, 0x54, 0x06, 0xbc,

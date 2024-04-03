@@ -65,9 +65,9 @@ impl<F: FieldExt> ExecutionTable<F> {
 
         for (index, op_step) in op_steps.iter().enumerate() {
             match op_step.instruction.opcode.into() {
-                InstructionType::BType(_) => self.rtype.assign(layouter, op_step),
+                InstructionType::BType(_) => self.btype.assign(layouter, op_step),
                 InstructionType::IType(_) => self.itype.assign(layouter, op_step),
-                InstructionType::RType(_) => self.stype.assign(layouter, op_step),
+                InstructionType::RType(_) => self.rtype.assign(layouter, op_step),
                 InstructionType::SType(_) => self.stype.assign(layouter, op_step),
                 InstructionType::UType(_) => {
                     let slice = &op_steps[index..=index+1];

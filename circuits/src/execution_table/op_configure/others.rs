@@ -46,7 +46,9 @@ impl<F: FieldExt> OthersTypeGadget<F> {
             |mut region| {
                 match step.instruction.opcode.into() {
                     Opcode::FENCE => self.s_fence.enable(&mut region, 0)?,
-                    _ => panic!("Not implemented {:?}", step.instruction.opcode),
+                    _ => {
+                        return Ok(());
+                    },
                 };
                 Ok(())
             },

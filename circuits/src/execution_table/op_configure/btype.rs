@@ -53,32 +53,32 @@ impl<F: FieldExt> BTypeGadget<F> {
             || "BType",
             |mut region| {
                 // todo
-                let rs1 = step.instruction.op_a;
-                let rs2 = step.instruction.op_b;
-                let imm = step.instruction.op_c;
-                let rs1_value = step.register_indexes.unwrap().read(rs1).unwrap();
-                let rs2_value = step.register_indexes.unwrap().read(rs2).unwrap();
-                // todo: how to use it?
-                let imm_value = step.register_indexes.unwrap().read(imm).unwrap();
+                // let rs1 = step.instruction.op_a;
+                // let rs2 = step.instruction.op_b;
+                // let imm = step.instruction.op_c;
+                // let rs1_value = step.register_indexes.unwrap().read(rs1).unwrap();
+                // let rs2_value = step.register_indexes.unwrap().read(rs2).unwrap();
+                // // todo: how to use it?
+                // let imm_value = step.register_indexes.unwrap().read(imm).unwrap();
 
-                region.assign_advice(
-                    || "lhs",
-                    self.lhs_col,
-                    0,
-                    || Value::known(F::from(rs1_value)),
-                )?;
+                // region.assign_advice(
+                //     || "lhs",
+                //     self.lhs_col,
+                //     0,
+                //     || Value::known(F::from(rs1_value)),
+                // )?;
 
-                region.assign_advice(
-                    || "rhs",
-                    self.rhs_col,
-                    0,
-                    || Value::known(F::from(rs2_value)),
-                )?;
+                // region.assign_advice(
+                //     || "rhs",
+                //     self.rhs_col,
+                //     0,
+                //     || Value::known(F::from(rs2_value)),
+                // )?;
 
-                match step.instruction.opcode.into() {
-                    Opcode::BEQ => self.s_beq.enable(&mut region, 0)?,
-                    _ => panic!("Not implemented {:?}", step.instruction.opcode),
-                };
+                // match step.instruction.opcode.into() {
+                //     Opcode::BEQ => self.s_beq.enable(&mut region, 0)?,
+                //     _ => panic!("Not implemented {:?}", step.instruction.opcode),
+                // };
                 Ok(())
             },
         )
