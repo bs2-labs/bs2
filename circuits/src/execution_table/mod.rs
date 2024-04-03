@@ -63,13 +63,16 @@ impl<F: FieldExt> ExecutionTable<F> {
     pub fn assign(&self, layouter: &mut impl Layouter<F>, entries: &Entries) -> Result<(), Error> {
         let op_steps = entries.get_op_steps();
 
-        for (_index, op_step) in op_steps.iter().enumerate() {
+        for (index, op_step) in op_steps.iter().enumerate() {
             match op_step.instruction.opcode.into() {
                 InstructionType::BType(_) => self.rtype.assign(layouter, op_step),
                 InstructionType::IType(_) => self.itype.assign(layouter, op_step),
                 InstructionType::RType(_) => self.stype.assign(layouter, op_step),
                 InstructionType::SType(_) => self.stype.assign(layouter, op_step),
-                InstructionType::UType(_) => self.utype.assign(layouter, op_step),
+                InstructionType::UType(_) => {
+                    let slice = &op_steps[index..=index+1];
+                    self.utype.assign(layouter, slice)
+                },
                 InstructionType::JType(_) => self.jtype.assign(layouter, op_step),
                 InstructionType::NoType(_) => self.others.assign(layouter, op_step),
                 _ => panic!("Not implemented {:?}", op_step.instruction.opcode),
