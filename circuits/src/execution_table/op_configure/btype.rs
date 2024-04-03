@@ -35,10 +35,9 @@ impl<F: FieldExt> BTypeGadget<F> {
         cs.create_gate("BType::BEQ", |vc| {
             let lhs = vc.query_advice(lhs_col, Rotation::cur());
             let rhs = vc.query_advice(rhs_col, Rotation::cur());
-            let out = vc.query_advice(lhs_col, Rotation::next());
+            // let out = vc.query_advice(lhs_col, Rotation::next());
             let s = vc.query_selector(s_beq);
-            // let (value, _) = rs1_value.overflowing_sub(rs2_value);
-            vec![s * (lhs + rhs - out)]
+            vec![s * (lhs - rhs)]
         });
 
         Self {
@@ -54,12 +53,13 @@ impl<F: FieldExt> BTypeGadget<F> {
             || "BType",
             |mut region| {
                 // todo
-                let rs1 = step.instruction.op_b;
-                let rs2 = step.instruction.op_c;
-                let rd = step.instruction.op_a;
+                let rs1 = step.instruction.op_a;
+                let rs2 = step.instruction.op_b;
+                let imm = step.instruction.op_c;
                 let rs1_value = step.register_indexes.unwrap().read(rs1).unwrap();
                 let rs2_value = step.register_indexes.unwrap().read(rs2).unwrap();
-                let rd_value = step.register_indexes.unwrap().read(rd).unwrap();
+                // todo: how to use it?
+                let imm_value = step.register_indexes.unwrap().read(imm).unwrap();
 
                 region.assign_advice(
                     || "lhs",
@@ -73,13 +73,6 @@ impl<F: FieldExt> BTypeGadget<F> {
                     self.rhs_col,
                     0,
                     || Value::known(F::from(rs2_value)),
-                )?;
-
-                region.assign_advice(
-                    || "output",
-                    self.lhs_col,
-                    1,
-                    || Value::known(F::from(rd_value)),
                 )?;
 
                 match step.instruction.opcode.into() {
