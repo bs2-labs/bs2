@@ -210,8 +210,14 @@ impl Entries {
         let rs1_value = step.registers[step.instruction.op_b as usize];
         let rs2_value = step.registers[step.instruction.op_c as usize];
         let result = match rtype {
-            RType::ADD => rs1_value + rs2_value,
-            RType::SUB => rs1_value - rs2_value,
+            RType::ADD => {
+                let (value, _) = rs1_value.overflowing_sub(rs2_value);
+                value
+            }
+            RType::SUB => {
+                let (value, _) = rs1_value.overflowing_sub(rs2_value);
+                value
+            }
             RType::SUBW => {
                 let (value, _) = rs1_value.overflowing_sub(rs2_value);
                 value.sign_extend(&32)
