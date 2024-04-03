@@ -1,5 +1,4 @@
 use entry_builder::entries::Entries;
-use entry_builder::op_step::OpStep;
 use halo2_proofs::arithmetic::FieldExt;
 use halo2_proofs::{
     circuit::Layouter,
@@ -36,27 +35,6 @@ impl<F: FieldExt> ExecutionTable<F> {
         // RType selector
         let s_add = cs.selector();
         let s_sub = cs.selector();
-        let s_subw = cs.selector();
-        let s_sll = cs.selector();
-        let s_srl = cs.selector();
-        let s_sra = cs.selector();
-        let s_slt = cs.selector();
-        let s_sltu = cs.selector();
-        let s_xor = cs.selector();
-        let s_or = cs.selector();
-        let s_and = cs.selector();
-        let s_mul = cs.selector();
-        let s_mulh = cs.selector();
-        let s_mulhu = cs.selector();
-        let s_mulhsu = cs.selector();
-        let s_div = cs.selector();
-        let s_divu = cs.selector();
-        let s_rem = cs.selector();
-        let s_remu = cs.selector();
-        let s_addw = cs.selector();
-        let s_sllw = cs.selector();
-        let s_srlw = cs.selector();
-        let s_sraw = cs.selector();
         // BType selector
         let s_beq = cs.selector();
         // IType selector
@@ -74,11 +52,7 @@ impl<F: FieldExt> ExecutionTable<F> {
             btype: BTypeGadget::configure(cs, lhs_col, rhs_col, s_beq),
             itype: ITypeGadget::configure(cs, lhs_col, rhs_col, s_addi),
             jtype: JTypeGadget::configure(cs, lhs_col, rhs_col, s_jal),
-            rtype: RTypeGadget::configure(
-                cs, lhs_col, rhs_col, s_add, s_sub, s_subw, s_sll, s_srl, s_sra,
-                s_slt, s_sltu, s_xor, s_or, s_and, s_mul, s_mulh, s_mulhu, s_mulhsu, s_div, s_divu,
-                s_rem, s_remu, s_addw, s_sllw, s_srlw, s_sraw
-            ),
+            rtype: RTypeGadget::configure(cs, lhs_col, rhs_col, s_add, s_sub),
             stype: STypeGadget::configure(cs, lhs_col, rhs_col, s_sw),
             utype: UTypeGadget::configure(cs, lhs_col, rhs_col, s_lui),
             others: OthersTypeGadget::configure(cs, lhs_col, rhs_col, s_lw),
