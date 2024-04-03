@@ -102,13 +102,9 @@ impl Entries {
                 Some(OpStep {
                     global_clk: *global_clk,
                     pc: *pc,
-                    instruction: instruction.clone(),
-                    register_indexes: r
-                        .unwrap_or(&vec![])
-                        .iter()
-                        .map(|r| r.index as u32)
-                        .collect(),
-                    memory_address: m.clone().map(|m| m.address),
+                    instruction: instruction,
+                    register_indexes: r,
+                    memory_address: m,
                 })
             })
             .collect()

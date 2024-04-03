@@ -1,10 +1,12 @@
 use runtime::trace::Instruction;
 
+use crate::entries::{MemoryOp, RegisterOp};
+
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct OpStep {
+pub struct OpStep<'a> {
     pub global_clk: u64,
     pub pc: u64,
-    pub instruction: Instruction,
-    pub register_indexes: Vec<u32>,
-    pub memory_address: Option<u64>,
+    pub instruction: &'a Instruction,
+    pub register_indexes: Option<&'a Vec<RegisterOp>>,
+    pub memory_address: Option<&'a MemoryOp>,
 }
