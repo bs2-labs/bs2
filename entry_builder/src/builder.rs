@@ -62,5 +62,6 @@ mod tests {
             steps,
         };
         entry_builder.build(&trace).expect("build entry");
+        dbg!(entry_builder.entries.get_op_steps());
     }
 }

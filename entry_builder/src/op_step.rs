@@ -6,5 +6,5 @@ pub struct OpStep {
     pub pc: u64,
     pub instruction: Instruction,
     pub register_indexes: Vec<u32>,
-    pub memory_indexes: Vec<u32>,
+    pub memory_address: Option<u64>,
 }

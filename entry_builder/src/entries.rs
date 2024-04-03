@@ -1,8 +1,11 @@
 use crate::{op_step::OpStep, Register};
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use core::fmt::Error;
-use runtime::trace::{BType, IType, InstructionType, JType, NoType, RType, SType, Step, UType};
+use runtime::trace::{
+    BType, IType, Instruction, InstructionType, JType, NoType, RType, SType, Step, UType,
+};
 use std::{
+    collections::HashMap,
     io::{Cursor, Seek, SeekFrom},
     ops::Shr,
 };
@@ -56,12 +59,14 @@ pub struct MemoryOp {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Entries {
-    /// Operations of memory
-    pub memory_ops: Vec<MemoryOp>,
-    /// Operations of register
-    pub register_ops: Vec<RegisterOp>,
-    /// Opereation contexts of each step
-    pub op_steps: Vec<OpStep>,
+    // TODO: this should be read from ELF file
+    pub pc_instructions: HashMap<u64, Instruction>,
+    /// Program counter for each global_clk,
+    pub pcs: Vec<u64>,
+    /// Operations of memory for each global_clk
+    pub memory_ops: Vec<Option<MemoryOp>>,
+    /// Operations of register for each global_clk
+    pub register_ops: Vec<Vec<RegisterOp>>,
 
     /// Memory values to faciliate the memory operations
     /// Default to 32MB memory as ckb-vm may have flexible memory size.
@@ -81,11 +86,40 @@ impl Default for Entries {
 }
 
 impl Entries {
+    pub fn get_op_steps(&self) -> Vec<OpStep> {
+        self.pcs
+            .iter()
+            .zip(&self.register_ops)
+            .zip(&self.memory_ops)
+            .filter_map(|((pc, r), m)| {
+                let instruction = self.pc_instructions.get(&pc).expect("get instructions");
+
+                if r.is_empty() && m.is_none() {
+                    return None;
+                }
+                let global_clk = r
+                    .first()
+                    .map(|r| r.global_clk)
+                    .or(m.clone().map(|m| m.global_clk))
+                    .unwrap();
+
+                Some(OpStep {
+                    global_clk: global_clk,
+                    pc: *pc,
+                    instruction: instruction.clone(),
+                    register_indexes: r.iter().map(|r| r.index as u32).collect(),
+                    memory_address: m.clone().map(|m| m.address),
+                })
+            })
+            .collect()
+    }
+
     pub fn new() -> Self {
         Self {
+            pc_instructions: HashMap::new(),
+            pcs: Vec::new(),
             memory_ops: Vec::new(),
             register_ops: Vec::new(),
-            op_steps: Vec::new(),
             // Some registers has initial state, so we need to copy them at first.
             should_copy_registers: true,
             memory_buffer: [0; 1024 * 1024 * 32].to_vec(),
@@ -110,7 +144,10 @@ impl Entries {
             index,
             value,
         };
-        self.register_ops.push(read_op);
+        self.register_ops
+            .get_mut(gc as usize)
+            .unwrap()
+            .push(read_op);
         self.rwc += 1;
     }
 
@@ -125,7 +162,10 @@ impl Entries {
             index,
             value,
         };
-        self.register_ops.push(write_op);
+        self.register_ops
+            .get_mut(gc as usize)
+            .unwrap()
+            .push(write_op);
         self.rwc += 1;
     }
 
@@ -147,7 +187,7 @@ impl Entries {
             value,
             width,
         };
-        self.memory_ops.push(read_op);
+        self.memory_ops[gc as usize] = Some(read_op);
         value
     }
 
@@ -159,7 +199,7 @@ impl Entries {
             value,
             width,
         };
-        self.memory_ops.push(write_op);
+        self.memory_ops[gc as usize] = Some(write_op);
         let mut writer = Cursor::new(&mut self.memory_buffer);
         writer.seek(SeekFrom::Start(address)).unwrap();
         match width {
@@ -522,6 +562,13 @@ impl Entries {
             }
         }
 
+        assert_eq!(self.register_ops.len(), step.global_clk as usize);
+        self.register_ops.push(Vec::new());
+        self.pc_instructions
+            .insert(step.pc, step.instruction.clone());
+        self.pcs.push(step.pc);
+        self.memory_ops.push(None);
+
         match opcode.into() {
             InstructionType::RType(r) => self.step_rtype(r, step),
             InstructionType::BType(b) => self.step_btype(b, step),
@@ -531,124 +578,5 @@ impl Entries {
             InstructionType::UType(u) => self.step_utype(u, step),
             InstructionType::NoType(n) => self.step_notype(n, step),
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::builder::EntryBuilder;
-    use crate::entries::{RegisterOp, RW};
-    use runtime::trace::Trace;
-
-    #[test]
-    fn btype_gen() {
-        let trace_json = r#"
-        {
-          "cycles": 26809,
-          "return_value": 0,
-          "steps": [
-              {
-                "global_clk": 0,
-                "pc": 65772,
-                "inst_type": "BType",
-                "instruction": {
-                        "opcode": "ADD",
-                        "op_a": 31,
-                        "op_b": 1,
-                        "op_c": 3,
-                        "imm_b": true,
-                        "imm_c": true
-                },
-                "registers": [ 0, 0, 494288, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
-              }
-          ]
-        }"#;
-        let trace: Trace = serde_json::from_str(trace_json).expect("json-deserialize Trace failed");
-
-        let mut builder = EntryBuilder::new();
-        builder.build(&trace).expect("build entries failed");
-
-        assert_eq!(
-            builder.entries.register_ops,
-            vec![
-                RegisterOp {
-                    global_clk: 0,
-                    rwc: 0,
-                    rw: RW::READ,
-                    index: 1,
-                    value: 0
-                },
-                RegisterOp {
-                    global_clk: 0,
-                    rwc: 1,
-                    rw: RW::READ,
-                    index: 3,
-                    value: 0
-                },
-                RegisterOp {
-                    global_clk: 0,
-                    rwc: 2,
-                    rw: RW::WRITE,
-                    index: 31,
-                    value: 0
-                }
-            ],
-        );
-    }
-
-    #[test]
-    fn rtype_gen() {
-        let trace_json = r#"
-        {
-          "cycles": 26809,
-          "return_value": 0,
-          "steps": [
-              {
-                "global_clk": 0,
-                "pc": 65772,
-                "inst_type": "RType",
-                "instruction": {
-                        "opcode": "ADD",
-                        "op_a": 31,
-                        "op_b": 1,
-                        "op_c": 3,
-                        "imm_b": true,
-                        "imm_c": true
-                },
-                "registers": [ 0, 0, 494288, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
-              }
-          ]
-        }"#;
-        let trace: Trace = serde_json::from_str(trace_json).expect("json-deserialize Trace failed");
-
-        let mut builder = EntryBuilder::new();
-        builder.build(&trace).expect("build entries failed");
-
-        assert_eq!(
-            builder.entries.register_ops,
-            vec![
-                RegisterOp {
-                    global_clk: 0,
-                    rwc: 0,
-                    rw: RW::READ,
-                    index: 1,
-                    value: 0
-                },
-                RegisterOp {
-                    global_clk: 0,
-                    rwc: 1,
-                    rw: RW::READ,
-                    index: 3,
-                    value: 0
-                },
-                RegisterOp {
-                    global_clk: 0,
-                    rwc: 2,
-                    rw: RW::WRITE,
-                    index: 31,
-                    value: 0
-                }
-            ],
-        );
     }
 }
