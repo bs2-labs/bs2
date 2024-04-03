@@ -32,13 +32,13 @@ impl<F: FieldExt> BTypeGadget<F> {
 
         // todo: constrain selector: s1 + s1 + .. + sn = 1
 
-        cs.create_gate("BType::BEQ", |vc| {
-            let lhs = vc.query_advice(lhs_col, Rotation::cur());
-            let rhs = vc.query_advice(rhs_col, Rotation::cur());
-            // let out = vc.query_advice(lhs_col, Rotation::next());
-            let s = vc.query_selector(s_beq);
-            vec![s * (lhs - rhs)]
-        });
+        // cs.create_gate("BType::BEQ", |vc| {
+        //     let lhs = vc.query_advice(lhs_col, Rotation::cur());
+        //     let rhs = vc.query_advice(rhs_col, Rotation::cur());
+        //     // let out = vc.query_advice(lhs_col, Rotation::next());
+        //     let s = vc.query_selector(s_beq);
+        //     vec![s * (lhs - rhs)]
+        // });
 
         Self {
             lhs_col,

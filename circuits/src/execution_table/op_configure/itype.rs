@@ -37,7 +37,6 @@ impl<F: FieldExt> ITypeGadget<F> {
             let rhs = vc.query_advice(rhs_col, Rotation::cur());
             let out = vc.query_advice(lhs_col, Rotation::next());
             let s = vc.query_selector(s_addi);
-            // let (value, _) = rs1_value.overflowing_sub(rs2_value);
             vec![s * (lhs + rhs - out)]
         });
 
@@ -62,6 +61,7 @@ impl<F: FieldExt> ITypeGadget<F> {
                 let rs1_value = step.register_indexes.unwrap().read(rs1).unwrap();
                 // todo: whether to ignore it
 
+                dbg!(rd_value, rs1_value);
                 region.assign_advice(
                     || "lhs",
                     self.lhs_col,
