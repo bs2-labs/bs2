@@ -53,13 +53,14 @@ impl<F: FieldExt> ITypeGadget<F> {
         layouter.assign_region(
             || "IType",
             |mut region| {
-                // todo
-                let rs1 = step.instruction.op_b;
-                let rs2 = step.instruction.op_c;
                 let rd = step.instruction.op_a;
-                let rs1_value = step.register_indexes.unwrap().read(rs1).unwrap();
-                let rs2_value = step.register_indexes.unwrap().read(rs2).unwrap();
+                let rs1 = step.instruction.op_b;
+                let imm = step.instruction.op_c;
+
                 let rd_value = step.register_indexes.unwrap().read(rd).unwrap();
+                let rs1_value = step.register_indexes.unwrap().read(rs1).unwrap();
+                // todo: whether to ignore it
+                let imm_value = step.register_indexes.unwrap().read(imm).unwrap();
 
                 region.assign_advice(
                     || "lhs",
@@ -72,7 +73,7 @@ impl<F: FieldExt> ITypeGadget<F> {
                     || "rhs",
                     self.rhs_col,
                     0,
-                    || Value::known(F::from(rs2_value)),
+                    || Value::known(F::from(imm)),
                 )?;
 
                 region.assign_advice(
