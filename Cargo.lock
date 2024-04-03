@@ -330,6 +330,7 @@ dependencies = [
  "log",
  "rand_core",
  "rand_xorshift",
+ "runtime",
 ]
 
 [[package]]
