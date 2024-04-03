@@ -11,6 +11,6 @@ cargo run --manifest-path=$PWD/trace_dumper/Cargo.toml --bin=ckb-debugger -- --m
 
 ### Prove
 ```
-cargo run -- prove
+cargo run -- prove --trace trace.json
 ```
 
