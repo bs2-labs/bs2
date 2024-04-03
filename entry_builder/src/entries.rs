@@ -1,14 +1,11 @@
-use runtime::trace::{BType, IType, InstructionType, JType, NoType, RType, SType, Step, UType};
-
+use crate::{op_step::OpStep, Register};
+use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use core::fmt::Error;
+use runtime::trace::{BType, IType, InstructionType, JType, NoType, RType, SType, Step, UType};
 use std::{
     io::{Cursor, Seek, SeekFrom},
     ops::Shr,
 };
-
-use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
-
-use crate::Register;
 
 /// Marker that defines whether an Operation performs a `READ` or a `WRITE`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -59,17 +56,19 @@ pub struct MemoryOp {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Entries {
-    /// Operations of memory and register
+    /// Operations of memory
     pub memory_ops: Vec<MemoryOp>,
-    /// Operations of memory and register
+    /// Operations of register
     pub register_ops: Vec<RegisterOp>,
+    /// Opereation contexts of each step
+    pub op_steps: Vec<OpStep>,
+
     /// Memory values to faciliate the memory operations
     /// Default to 32MB memory as ckb-vm may have flexible memory size.
-    pub memory_values: Vec<u8>,
+    pub memory_buffer: Vec<u8>,
+    pub register_buffer: Vec<u64>,
 
     pub should_copy_registers: bool,
-
-    pub register: Vec<u64>,
 
     /// Temporary register to store the counter for operations within an instruction.
     pub rwc: u64,
@@ -86,10 +85,11 @@ impl Entries {
         Self {
             memory_ops: Vec::new(),
             register_ops: Vec::new(),
+            op_steps: Vec::new(),
             // Some registers has initial state, so we need to copy them at first.
             should_copy_registers: true,
-            memory_values: [0; 1024 * 1024 * 32].to_vec(),
-            register: [0; 32].to_vec(),
+            memory_buffer: [0; 1024 * 1024 * 32].to_vec(),
+            register_buffer: [0; 32].to_vec(),
             rwc: 0,
         }
     }
@@ -100,7 +100,7 @@ impl Entries {
 
     pub fn read_register(&mut self, gc: u64, index: u64, value: u64) {
         assert_eq!(
-            self.register[index as usize], value,
+            self.register_buffer[index as usize], value,
             "Read the wrong register value"
         );
         let read_op = RegisterOp {
@@ -116,7 +116,7 @@ impl Entries {
 
     pub fn write_register(&mut self, gc: u64, index: u64, value: u64) {
         if index != 0 {
-            self.register[index as usize] = value;
+            self.register_buffer[index as usize] = value;
         }
         let write_op = RegisterOp {
             global_clk: gc,
@@ -130,7 +130,7 @@ impl Entries {
     }
 
     pub fn read_memory(&mut self, gc: u64, address: u64, width: u8) -> u64 {
-        let mut reader = Cursor::new(&self.memory_values);
+        let mut reader = Cursor::new(&self.memory_buffer);
         reader.seek(SeekFrom::Start(address)).unwrap();
         let value = match width {
             8 => reader.read_u8().unwrap() as u64,
@@ -160,7 +160,7 @@ impl Entries {
             width,
         };
         self.memory_ops.push(write_op);
-        let mut writer = Cursor::new(&mut self.memory_values);
+        let mut writer = Cursor::new(&mut self.memory_buffer);
         writer.seek(SeekFrom::Start(address)).unwrap();
         match width {
             8 => writer.write_u8(value as u8).unwrap(),
@@ -505,11 +505,11 @@ impl Entries {
         self.rwc = 0;
         let opcode = step.instruction.opcode;
         if self.should_copy_registers {
-            self.register = step.registers.clone();
+            self.register_buffer = step.registers.clone();
             self.should_copy_registers = false;
         } else {
             for (index, (left, right)) in
-                step.registers.iter().zip(self.register.clone()).enumerate()
+                step.registers.iter().zip(self.register_buffer.clone()).enumerate()
             {
                 assert_eq!(
                     *left, right,
