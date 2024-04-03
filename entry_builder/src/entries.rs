@@ -61,12 +61,12 @@ pub struct MemoryOp {
 pub struct Entries {
     // TODO: this should be read from ELF file
     pub pc_instructions: HashMap<u64, Instruction>,
-    /// Program counter for each global_clk,
-    pub pcs: Vec<u64>,
+    /// Program counter for each global_clk
+    pub pcs: Vec<(u64, u64)>,
     /// Operations of memory for each global_clk
-    pub memory_ops: Vec<Option<MemoryOp>>,
+    pub memory_ops: HashMap<u64, MemoryOp>,
     /// Operations of register for each global_clk
-    pub register_ops: Vec<Vec<RegisterOp>>,
+    pub register_ops: HashMap<u64, Vec<RegisterOp>>,
 
     /// Memory values to faciliate the memory operations
     /// Default to 32MB memory as ckb-vm may have flexible memory size.
@@ -89,25 +89,25 @@ impl Entries {
     pub fn get_op_steps(&self) -> Vec<OpStep> {
         self.pcs
             .iter()
-            .zip(&self.register_ops)
-            .zip(&self.memory_ops)
-            .filter_map(|((pc, r), m)| {
+            .filter_map(|(global_clk, pc)| {
+                let r = self.register_ops.get(&global_clk);
+                let m = self.memory_ops.get(&global_clk);
+
                 let instruction = self.pc_instructions.get(&pc).expect("get instructions");
 
-                if r.is_empty() && m.is_none() {
+                if r.is_none() && m.is_none() {
                     return None;
                 }
-                let global_clk = r
-                    .first()
-                    .map(|r| r.global_clk)
-                    .or(m.clone().map(|m| m.global_clk))
-                    .unwrap();
 
                 Some(OpStep {
-                    global_clk: global_clk,
+                    global_clk: *global_clk,
                     pc: *pc,
                     instruction: instruction.clone(),
-                    register_indexes: r.iter().map(|r| r.index as u32).collect(),
+                    register_indexes: r
+                        .unwrap_or(&vec![])
+                        .iter()
+                        .map(|r| r.index as u32)
+                        .collect(),
                     memory_address: m.clone().map(|m| m.address),
                 })
             })
@@ -118,8 +118,8 @@ impl Entries {
         Self {
             pc_instructions: HashMap::new(),
             pcs: Vec::new(),
-            memory_ops: Vec::new(),
-            register_ops: Vec::new(),
+            memory_ops: HashMap::new(),
+            register_ops: HashMap::new(),
             // Some registers has initial state, so we need to copy them at first.
             should_copy_registers: true,
             memory_buffer: [0; 1024 * 1024 * 32].to_vec(),
@@ -144,10 +144,8 @@ impl Entries {
             index,
             value,
         };
-        self.register_ops
-            .get_mut(gc as usize)
-            .unwrap()
-            .push(read_op);
+
+        self.register_ops.entry(gc).or_insert(vec![]).push(read_op);
         self.rwc += 1;
     }
 
@@ -162,10 +160,7 @@ impl Entries {
             index,
             value,
         };
-        self.register_ops
-            .get_mut(gc as usize)
-            .unwrap()
-            .push(write_op);
+        self.register_ops.entry(gc).or_insert(vec![]).push(write_op);
         self.rwc += 1;
     }
 
@@ -187,7 +182,7 @@ impl Entries {
             value,
             width,
         };
-        self.memory_ops[gc as usize] = Some(read_op);
+        self.memory_ops.insert(gc, read_op);
         value
     }
 
@@ -199,7 +194,7 @@ impl Entries {
             value,
             width,
         };
-        self.memory_ops[gc as usize] = Some(write_op);
+        self.memory_ops.insert(gc, write_op);
         let mut writer = Cursor::new(&mut self.memory_buffer);
         writer.seek(SeekFrom::Start(address)).unwrap();
         match width {
@@ -562,12 +557,9 @@ impl Entries {
             }
         }
 
-        assert_eq!(self.register_ops.len(), step.global_clk as usize);
-        self.register_ops.push(Vec::new());
         self.pc_instructions
             .insert(step.pc, step.instruction.clone());
-        self.pcs.push(step.pc);
-        self.memory_ops.push(None);
+        self.pcs.push((step.global_clk, step.pc));
 
         match opcode.into() {
             InstructionType::RType(r) => self.step_rtype(r, step),
