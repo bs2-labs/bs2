@@ -85,23 +85,19 @@ impl Entries {
     pub fn get_op_steps(&self) -> Vec<OpStep> {
         self.pcs
             .iter()
-            .filter_map(|(global_clk, pc)| {
+            .map(|(global_clk, pc)| {
                 let r = self.register_ops.get(&global_clk);
                 let m = self.memory_ops.get(&global_clk);
 
                 let instruction = self.pc_instructions.get(&pc).expect("get instructions");
 
-                if r.is_none() && m.is_none() {
-                    return None;
-                }
-
-                Some(OpStep {
+                OpStep {
                     global_clk: *global_clk,
                     pc: *pc,
                     instruction: instruction,
                     register_indexes: r,
                     memory_address: m,
-                })
+                }
             })
             .collect()
     }

@@ -1,9 +1,9 @@
-use crate::execution_table::Entries;
 use core::marker::PhantomData;
+use entry_builder::entries::Entries;
+use entry_builder::op_step::OpStep;
 
 use halo2_proofs::arithmetic::FieldExt;
 use halo2_proofs::circuit::{AssignedCell, Layouter, Value};
-
 use halo2_proofs::plonk::*;
 use halo2_proofs::poly::Rotation;
 
@@ -56,12 +56,7 @@ impl<F: FieldExt> ITypeGadget<F> {
         }
     }
 
-    pub fn assign(
-        &self,
-        layouter: &mut impl Layouter<F>,
-        // step: &Step,
-        _entries: &Entries,
-    ) -> Result<(), Error> {
+    pub fn assign(&self, layouter: &mut impl Layouter<F>, step: &OpStep) -> Result<(), Error> {
         layouter.assign_region(
             || "rtype",
             |mut region| {

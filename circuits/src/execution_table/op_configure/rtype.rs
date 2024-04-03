@@ -1,9 +1,9 @@
-use crate::execution_table::Entries;
 use core::marker::PhantomData;
+use entry_builder::entries::Entries;
+use entry_builder::op_step::OpStep;
 
 use halo2_proofs::arithmetic::FieldExt;
 use halo2_proofs::circuit::{AssignedCell, Layouter, Value};
-
 use halo2_proofs::plonk::*;
 use halo2_proofs::poly::Rotation;
 use runtime::trace::{BType, IType, InstructionType, JType, NoType, RType, SType, Step, UType};
@@ -179,7 +179,6 @@ impl<F: FieldExt> RTypeGadget<F> {
             let rhs = vc.query_advice(rhs_col, Rotation::cur());
             let out = vc.query_advice(lhs_col, Rotation::next());
             let s = vc.query_selector(s_sub);
-
 
             // RType::OR => rs1_value | rs2_value,
             vec![s * (lhs - rhs - out)]
@@ -407,23 +406,10 @@ impl<F: FieldExt> RTypeGadget<F> {
         }
     }
 
-    pub fn assign(
-        &self,
-        layouter: &mut impl Layouter<F>,
-        // step: &Step,
-        _entries: &Entries,
-    ) -> Result<(), Error> {
+    pub fn assign(&self, layouter: &mut impl Layouter<F>, step: &OpStep) -> Result<(), Error> {
         layouter.assign_region(
             || "rtype",
             |mut region| {
-                // rs1_value
-                // let col0 = step.registers[step.instruction.op_b as usize];
-                // // rs2_value
-                // let col1 = step.registers[step.instruction.op_c as usize];
-                // // rd_value at next row
-                // let col0_next = step.registers[step.instruction.op_a as usize];
-                // let col0 = self.col0;
-                // let col1 = self.col1;
                 let rtype: RType = RType::ADD;
 
                 match rtype {

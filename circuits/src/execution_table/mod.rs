@@ -1,6 +1,7 @@
 use entry_builder::entries::Entries;
+use entry_builder::op_step::OpStep;
+use runtime::trace::{InstructionType, Opcode};
 use halo2_proofs::arithmetic::FieldExt;
-
 use halo2_proofs::{
     circuit::Layouter,
     plonk::{Circuit, ConstraintSystem, Error},
@@ -8,8 +9,8 @@ use halo2_proofs::{
 use std::marker::PhantomData;
 
 pub mod op_configure;
-use op_configure::rtype::RTypeGadget;
 use op_configure::itype::ITypeGadget;
+use op_configure::rtype::RTypeGadget;
 
 #[derive(Clone)]
 pub struct ExecutionTable<F> {
@@ -33,8 +34,22 @@ impl<F: FieldExt> ExecutionTable<F> {
     }
 
     pub fn assign(&self, layouter: &mut impl Layouter<F>, entries: &Entries) -> Result<(), Error> {
-        self.rtype.assign(layouter, entries)?;
-        self.itype.assign(layouter, entries)?;
+        let op_steps = entries.get_op_steps();
+
+        for (_index, op_step) in op_steps.iter().enumerate() {
+            let instruction_type: InstructionType = op_step.instruction.opcode.into();
+            match instruction_type {
+                InstructionType::BType(_) => self.rtype.assign(layouter, op_step),
+                InstructionType::IType(_) => self.itype.assign(layouter, op_step),
+                InstructionType::SType(_) => self.rtype.assign(layouter, op_step),
+                InstructionType::UType(_) => self.rtype.assign(layouter, op_step),
+                InstructionType::JType(_) => self.rtype.assign(layouter, op_step),
+                InstructionType::NoType(_) => self.rtype.assign(layouter, op_step),
+                _ => {
+                    unimplemented!("unimplement instruction type");
+                },
+            };
+        }
 
         Ok(())
     }
