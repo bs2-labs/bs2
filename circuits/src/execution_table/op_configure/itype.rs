@@ -11,7 +11,7 @@ use halo2_proofs::poly::Rotation;
 pub struct ACell<F: FieldExt>(pub AssignedCell<F, F>);
 
 #[derive(Clone)]
-pub struct RTypeGadget<F> {
+pub struct ITypeGadget<F> {
     pub lhs_col: Column<Advice>,
     pub rhs_col: Column<Advice>,
     s_add: Selector,
@@ -19,7 +19,7 @@ pub struct RTypeGadget<F> {
     _maker: PhantomData<F>,
 }
 
-impl<F: FieldExt> RTypeGadget<F> {
+impl<F: FieldExt> ITypeGadget<F> {
     pub fn configure(
         cs: &mut ConstraintSystem<F>,
         lhs_col: Column<Advice>,
