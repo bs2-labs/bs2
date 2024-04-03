@@ -1,4 +1,5 @@
 use crate::execution_table::ExecutionTable;
+use crate::memory_table::MemoryTable;
 use entry_builder::entries::Entries;
 use halo2_proofs::arithmetic::FieldExt;
 

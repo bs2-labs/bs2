@@ -1,4 +1,5 @@
 pub mod execution_table;
+pub mod memory_table;
 pub mod main_circuit;
 
 use crate::main_circuit::MainCircuit;
