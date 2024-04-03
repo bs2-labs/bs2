@@ -4,11 +4,7 @@ use core::fmt::Error;
 use runtime::trace::{
     BType, IType, Instruction, InstructionType, JType, NoType, RType, SType, Step, UType,
 };
-use std::{
-    collections::HashMap,
-    io::{Cursor, Seek, SeekFrom},
-    ops::Shr,
-};
+use std::{collections::HashMap, io::Cursor, ops::Shr};
 
 /// Marker that defines whether an Operation performs a `READ` or a `WRITE`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -118,8 +114,8 @@ impl Entries {
             register_ops: HashMap::new(),
             // Some registers has initial state, so we need to copy them at first.
             should_copy_registers: true,
-            memory_buffer: [0; 1024 * 1024 * 32].to_vec(),
-            register_buffer: [0; 32].to_vec(),
+            memory_buffer: vec![0; 1024 * 1024 * 32],
+            register_buffer: vec![0; 32],
             rwc: 0,
         }
     }
@@ -161,8 +157,7 @@ impl Entries {
     }
 
     pub fn read_memory(&mut self, gc: u64, address: u64, width: u8) -> u64 {
-        let mut reader = Cursor::new(&self.memory_buffer);
-        reader.seek(SeekFrom::Start(address)).unwrap();
+        let mut reader = Cursor::new(&self.memory_buffer[address as usize..]);
         let value = match width {
             8 => reader.read_u8().unwrap() as u64,
             16 => reader.read_u16::<LittleEndian>().unwrap() as u64,
@@ -191,8 +186,7 @@ impl Entries {
             width,
         };
         self.memory_ops.insert(gc, write_op);
-        let mut writer = Cursor::new(&mut self.memory_buffer);
-        writer.seek(SeekFrom::Start(address)).unwrap();
+        let mut writer = Cursor::new(&mut self.memory_buffer[address as usize..]);
         match width {
             8 => writer.write_u8(value as u8).unwrap(),
             16 => writer.write_u16::<LittleEndian>(value as u16).unwrap(),
@@ -322,22 +316,23 @@ impl Entries {
         Ok(())
     }
 
-    pub fn step_stype_or_btype(&mut self, step: &Step) -> (u64, u64, u64) {
+    pub fn step_stype_or_btype(&mut self, step: &Step) -> (u64, u64, i64) {
         let rs1 = step.registers[step.instruction.op_a as usize];
         let rs2 = step.registers[step.instruction.op_b as usize];
-        let imm = step.instruction.op_c as u64;
+        // Immediate is always signed here.
+        let imm = step.instruction.op_c.sign_extend(&32) as i64;
         self.read_register(step.global_clk, step.instruction.op_a, rs1);
         self.read_register(step.global_clk, step.instruction.op_b, rs2);
         (rs1, rs2, imm)
     }
 
     pub fn step_stype(&mut self, stype: SType, step: &Step) -> Result<(), Error> {
-        let (rs1, rs2, imm) = self.step_stype_or_btype(step);
+        // Note that the convention to store rs1/rs2/imm is different from the btype.
+        let (rs2, rs1, imm) = self.step_stype_or_btype(step);
 
-        let (addr, _) = (rs1 as i64).overflowing_add(imm as i64);
+        let (addr, _) = (rs1 as i64).overflowing_add(imm);
         let addr = addr as u64;
         let value = rs2;
-        dbg!(stype);
         match stype {
             SType::SB => {
                 self.write_memory(step.global_clk, addr, value, 8);
@@ -487,6 +482,7 @@ impl Entries {
     }
 
     pub fn step_btype(&mut self, btype: BType, step: &Step) -> Result<(), Error> {
+        // Note that the convention to store rs1/rs2/imm is different from the stype.
         let (rs1, rs2, imm) = self.step_stype_or_btype(step);
 
         let new_pc = if match btype {
@@ -497,7 +493,7 @@ impl Entries {
             BType::BLT => (rs1 as i64) < (rs2 as i64),
             BType::BLTU => (rs1 as u64) < (rs2 as u64),
         } {
-            step.pc + imm as u64
+            (step.pc as i64 + imm) as u64
         } else {
             step.pc + step.instruction.get_instruction_length() as u64
         };
