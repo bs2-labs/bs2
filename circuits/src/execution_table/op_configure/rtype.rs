@@ -48,35 +48,32 @@ impl<F: FieldExt> RTypeGadget<F> {
         rhs_col: Column<Advice>,
         s_add: Selector,
         s_sub: Selector,
+        s_subw: Selector,
+        s_sll: Selector,
+        s_srl: Selector,
+        s_sra: Selector,
+        s_slt: Selector,
+        s_sltu: Selector,
+        s_xor: Selector,
+        s_or: Selector,
+        s_and: Selector,
+        s_mul: Selector,
+        s_mulh: Selector,
+        s_mulhu: Selector,
+        s_mulhsu: Selector,
+        s_div: Selector,
+        s_divu: Selector,
+        s_rem: Selector,
+        s_remu: Selector,
+        s_addw: Selector,
+        s_sllw: Selector,
+        s_srlw: Selector,
+        s_sraw: Selector,
     ) -> Self {
         let lhs_col = cs.advice_column();
         let rhs_col = cs.advice_column();
         cs.enable_equality(lhs_col);
         cs.enable_equality(rhs_col);
-        // todo: add selector for every gate
-        let s_add = cs.selector();
-        let s_sub = cs.selector();
-        let s_subw = cs.selector();
-        let s_sll = cs.selector();
-        let s_srl = cs.selector();
-        let s_sra = cs.selector();
-        let s_slt = cs.selector();
-        let s_sltu = cs.selector();
-        let s_xor = cs.selector();
-        let s_or = cs.selector();
-        let s_and = cs.selector();
-        let s_mul = cs.selector();
-        let s_mulh = cs.selector();
-        let s_mulhu = cs.selector();
-        let s_mulhsu = cs.selector();
-        let s_div = cs.selector();
-        let s_divu = cs.selector();
-        let s_rem = cs.selector();
-        let s_remu = cs.selector();
-        let s_addw = cs.selector();
-        let s_sllw = cs.selector();
-        let s_srlw = cs.selector();
-        let s_sraw = cs.selector();
 
         // todo: constrain selector: s1 + s1 + .. + sn = 1
 
@@ -410,583 +407,126 @@ impl<F: FieldExt> RTypeGadget<F> {
         layouter.assign_region(
             || "rtype",
             |mut region| {
-                let rtype: RType = RType::ADD;
 
-                match rtype {
+                // let rs1_value = step.registers.find(|x| x.index== rs1&& x.rw == RW::READ).unwrap();
+
+                let rs1_value = val_vec[0].value;
+                let rs2_value = val_vec[1].value;
+                let rd_value = val_vec[2].value;
+
+                region.assign_advice(
+                    || "lhs",
+                    self.lhs_col,
+                    0,
+                    || Value::known(F::from(rs1_value)),
+                )?;
+
+                region.assign_advice(
+                    || "rhs",
+                    self.rhs_col,
+                    0,
+                    || Value::known(F::from(rs2_value)),
+                )?;
+
+                region.assign_advice(
+                    || "output",
+                    self.lhs_col,
+                    1,
+                    || Value::known(F::from(rd_value)),
+                )?;
+                match step.instruction.opcode.into() {
                     RType::ADD => {
                         let selector = self.s_add;
                         selector.enable(&mut region, 0)?;
-
-                        region.assign_advice(
-                            || "lhs",
-                            self.lhs_col,
-                            0,
-                            || Value::known(F::from(100)),
-                        )?;
-
-                        region.assign_advice(
-                            || "rhs",
-                            self.rhs_col,
-                            0,
-                            || Value::known(F::from(20)),
-                        )?;
-
-                        region.assign_advice(
-                            || "output",
-                            self.lhs_col,
-                            1,
-                            || Value::known(F::from(120)),
-                        )?;
                     }
                     RType::SUB => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
-
-                        region.assign_advice(
-                            || "lhs",
-                            self.lhs_col,
-                            0,
-                            || Value::known(F::from(100)),
-                        )?;
-
-                        region.assign_advice(
-                            || "rhs",
-                            self.rhs_col,
-                            0,
-                            || Value::known(F::from(20)),
-                        )?;
-
-                        region.assign_advice(
-                            || "output",
-                            self.lhs_col,
-                            1,
-                            || Value::known(F::from(80)),
-                        )?;
                     }
                     RType::SUBW => {
                         let selector = self.s_subw;
                         selector.enable(&mut region, 0)?;
-
-                        region.assign_advice(
-                            || "lhs",
-                            self.lhs_col,
-                            0,
-                            || Value::known(F::from(100)),
-                        )?;
-
-                        region.assign_advice(
-                            || "rhs",
-                            self.rhs_col,
-                            0,
-                            || Value::known(F::from(20)),
-                        )?;
-
-                        region.assign_advice(
-                            || "output",
-                            self.lhs_col,
-                            1,
-                            || Value::known(F::from(80)),
-                        )?;
                     }
                     RType::SLL => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
-
-                        region.assign_advice(
-                            || "lhs",
-                            self.lhs_col,
-                            0,
-                            || Value::known(F::from(100)),
-                        )?;
-
-                        region.assign_advice(
-                            || "rhs",
-                            self.rhs_col,
-                            0,
-                            || Value::known(F::from(20)),
-                        )?;
-
-                        region.assign_advice(
-                            || "output",
-                            self.lhs_col,
-                            1,
-                            || Value::known(F::from(80)),
-                        )?;
                     }
                     RType::SRL => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
 
-                        region.assign_advice(
-                            || "lhs",
-                            self.lhs_col,
-                            0,
-                            || Value::known(F::from(100)),
-                        )?;
-
-                        region.assign_advice(
-                            || "rhs",
-                            self.rhs_col,
-                            0,
-                            || Value::known(F::from(20)),
-                        )?;
-
-                        region.assign_advice(
-                            || "output",
-                            self.lhs_col,
-                            1,
-                            || Value::known(F::from(80)),
-                        )?;
                     }
                     RType::SRA => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
-
-                        region.assign_advice(
-                            || "lhs",
-                            self.lhs_col,
-                            0,
-                            || Value::known(F::from(100)),
-                        )?;
-
-                        region.assign_advice(
-                            || "rhs",
-                            self.rhs_col,
-                            0,
-                            || Value::known(F::from(20)),
-                        )?;
-
-                        region.assign_advice(
-                            || "output",
-                            self.lhs_col,
-                            1,
-                            || Value::known(F::from(80)),
-                        )?;
                     }
                     RType::SLT => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
-
-                        region.assign_advice(
-                            || "lhs",
-                            self.lhs_col,
-                            0,
-                            || Value::known(F::from(100)),
-                        )?;
-
-                        region.assign_advice(
-                            || "rhs",
-                            self.rhs_col,
-                            0,
-                            || Value::known(F::from(20)),
-                        )?;
-
-                        region.assign_advice(
-                            || "output",
-                            self.lhs_col,
-                            1,
-                            || Value::known(F::from(80)),
-                        )?;
                     }
                     RType::SLTU => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
-
-                        region.assign_advice(
-                            || "lhs",
-                            self.lhs_col,
-                            0,
-                            || Value::known(F::from(100)),
-                        )?;
-
-                        region.assign_advice(
-                            || "rhs",
-                            self.rhs_col,
-                            0,
-                            || Value::known(F::from(20)),
-                        )?;
-
-                        region.assign_advice(
-                            || "output",
-                            self.lhs_col,
-                            1,
-                            || Value::known(F::from(80)),
-                        )?;
                     }
                     RType::XOR => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
-
-                        region.assign_advice(
-                            || "lhs",
-                            self.lhs_col,
-                            0,
-                            || Value::known(F::from(100)),
-                        )?;
-
-                        region.assign_advice(
-                            || "rhs",
-                            self.rhs_col,
-                            0,
-                            || Value::known(F::from(20)),
-                        )?;
-
-                        region.assign_advice(
-                            || "output",
-                            self.lhs_col,
-                            1,
-                            || Value::known(F::from(80)),
-                        )?;
                     }
                     RType::OR => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
-
-                        region.assign_advice(
-                            || "lhs",
-                            self.lhs_col,
-                            0,
-                            || Value::known(F::from(100)),
-                        )?;
-
-                        region.assign_advice(
-                            || "rhs",
-                            self.rhs_col,
-                            0,
-                            || Value::known(F::from(20)),
-                        )?;
-
-                        region.assign_advice(
-                            || "output",
-                            self.lhs_col,
-                            1,
-                            || Value::known(F::from(80)),
-                        )?;
                     }
                     RType::AND => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
-
-                        region.assign_advice(
-                            || "lhs",
-                            self.lhs_col,
-                            0,
-                            || Value::known(F::from(100)),
-                        )?;
-
-                        region.assign_advice(
-                            || "rhs",
-                            self.rhs_col,
-                            0,
-                            || Value::known(F::from(20)),
-                        )?;
-
-                        region.assign_advice(
-                            || "output",
-                            self.lhs_col,
-                            1,
-                            || Value::known(F::from(80)),
-                        )?;
                     }
                     RType::MUL => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
-
-                        region.assign_advice(
-                            || "lhs",
-                            self.lhs_col,
-                            0,
-                            || Value::known(F::from(100)),
-                        )?;
-
-                        region.assign_advice(
-                            || "rhs",
-                            self.rhs_col,
-                            0,
-                            || Value::known(F::from(20)),
-                        )?;
-
-                        region.assign_advice(
-                            || "output",
-                            self.lhs_col,
-                            1,
-                            || Value::known(F::from(80)),
-                        )?;
                     }
                     RType::MULH => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
-
-                        region.assign_advice(
-                            || "lhs",
-                            self.lhs_col,
-                            0,
-                            || Value::known(F::from(100)),
-                        )?;
-
-                        region.assign_advice(
-                            || "rhs",
-                            self.rhs_col,
-                            0,
-                            || Value::known(F::from(20)),
-                        )?;
-
-                        region.assign_advice(
-                            || "output",
-                            self.lhs_col,
-                            1,
-                            || Value::known(F::from(80)),
-                        )?;
                     }
                     RType::MULHU => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
-
-                        region.assign_advice(
-                            || "lhs",
-                            self.lhs_col,
-                            0,
-                            || Value::known(F::from(100)),
-                        )?;
-
-                        region.assign_advice(
-                            || "rhs",
-                            self.rhs_col,
-                            0,
-                            || Value::known(F::from(20)),
-                        )?;
-
-                        region.assign_advice(
-                            || "output",
-                            self.lhs_col,
-                            1,
-                            || Value::known(F::from(80)),
-                        )?;
                     }
                     RType::MULHSU => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
-
-                        region.assign_advice(
-                            || "lhs",
-                            self.lhs_col,
-                            0,
-                            || Value::known(F::from(100)),
-                        )?;
-
-                        region.assign_advice(
-                            || "rhs",
-                            self.rhs_col,
-                            0,
-                            || Value::known(F::from(20)),
-                        )?;
-
-                        region.assign_advice(
-                            || "output",
-                            self.lhs_col,
-                            1,
-                            || Value::known(F::from(80)),
-                        )?;
                     }
                     RType::DIV => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
-
-                        region.assign_advice(
-                            || "lhs",
-                            self.lhs_col,
-                            0,
-                            || Value::known(F::from(100)),
-                        )?;
-
-                        region.assign_advice(
-                            || "rhs",
-                            self.rhs_col,
-                            0,
-                            || Value::known(F::from(20)),
-                        )?;
-
-                        region.assign_advice(
-                            || "output",
-                            self.lhs_col,
-                            1,
-                            || Value::known(F::from(80)),
-                        )?;
                     }
                     RType::DIVU => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
-
-                        region.assign_advice(
-                            || "lhs",
-                            self.lhs_col,
-                            0,
-                            || Value::known(F::from(100)),
-                        )?;
-
-                        region.assign_advice(
-                            || "rhs",
-                            self.rhs_col,
-                            0,
-                            || Value::known(F::from(20)),
-                        )?;
-
-                        region.assign_advice(
-                            || "output",
-                            self.lhs_col,
-                            1,
-                            || Value::known(F::from(80)),
-                        )?;
                     }
                     RType::REM => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
-
-                        region.assign_advice(
-                            || "lhs",
-                            self.lhs_col,
-                            0,
-                            || Value::known(F::from(100)),
-                        )?;
-
-                        region.assign_advice(
-                            || "rhs",
-                            self.rhs_col,
-                            0,
-                            || Value::known(F::from(20)),
-                        )?;
-
-                        region.assign_advice(
-                            || "output",
-                            self.lhs_col,
-                            1,
-                            || Value::known(F::from(80)),
-                        )?;
                     }
                     RType::REMU => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
-
-                        region.assign_advice(
-                            || "lhs",
-                            self.lhs_col,
-                            0,
-                            || Value::known(F::from(100)),
-                        )?;
-
-                        region.assign_advice(
-                            || "rhs",
-                            self.rhs_col,
-                            0,
-                            || Value::known(F::from(20)),
-                        )?;
-
-                        region.assign_advice(
-                            || "output",
-                            self.lhs_col,
-                            1,
-                            || Value::known(F::from(80)),
-                        )?;
                     }
                     RType::ADDW => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
-
-                        region.assign_advice(
-                            || "lhs",
-                            self.lhs_col,
-                            0,
-                            || Value::known(F::from(100)),
-                        )?;
-
-                        region.assign_advice(
-                            || "rhs",
-                            self.rhs_col,
-                            0,
-                            || Value::known(F::from(20)),
-                        )?;
-
-                        region.assign_advice(
-                            || "output",
-                            self.lhs_col,
-                            1,
-                            || Value::known(F::from(80)),
-                        )?;
                     }
                     RType::SLLW => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
-
-                        region.assign_advice(
-                            || "lhs",
-                            self.lhs_col,
-                            0,
-                            || Value::known(F::from(100)),
-                        )?;
-
-                        region.assign_advice(
-                            || "rhs",
-                            self.rhs_col,
-                            0,
-                            || Value::known(F::from(20)),
-                        )?;
-
-                        region.assign_advice(
-                            || "output",
-                            self.lhs_col,
-                            1,
-                            || Value::known(F::from(80)),
-                        )?;
                     }
                     RType::SRLW => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
-
-                        region.assign_advice(
-                            || "lhs",
-                            self.lhs_col,
-                            0,
-                            || Value::known(F::from(100)),
-                        )?;
-
-                        region.assign_advice(
-                            || "rhs",
-                            self.rhs_col,
-                            0,
-                            || Value::known(F::from(20)),
-                        )?;
-
-                        region.assign_advice(
-                            || "output",
-                            self.lhs_col,
-                            1,
-                            || Value::known(F::from(80)),
-                        )?;
                     }
                     RType::SRAW => {
                         let selector = self.s_sub;
                         selector.enable(&mut region, 0)?;
-
-                        region.assign_advice(
-                            || "lhs",
-                            self.lhs_col,
-                            0,
-                            || Value::known(F::from(100)),
-                        )?;
-
-                        region.assign_advice(
-                            || "rhs",
-                            self.rhs_col,
-                            0,
-                            || Value::known(F::from(20)),
-                        )?;
-
-                        region.assign_advice(
-                            || "output",
-                            self.lhs_col,
-                            1,
-                            || Value::known(F::from(80)),
-                        )?;
                     }
                 };
                 // todo: assign selector value to some position
