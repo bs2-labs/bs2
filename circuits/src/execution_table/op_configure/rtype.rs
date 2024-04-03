@@ -70,8 +70,8 @@ impl<F: FieldExt> RTypeGadget<F> {
         s_srlw: Selector,
         s_sraw: Selector,
     ) -> Self {
-        let lhs_col = cs.advice_column();
-        let rhs_col = cs.advice_column();
+        // let lhs_col = cs.advice_column();
+        // let rhs_col = cs.advice_column();
         cs.enable_equality(lhs_col);
         cs.enable_equality(rhs_col);
 
@@ -407,9 +407,6 @@ impl<F: FieldExt> RTypeGadget<F> {
         layouter.assign_region(
             || "rtype",
             |mut region| {
-
-                // let rs1_value = step.registers.find(|x| x.index== rs1&& x.rw == RW::READ).unwrap();
-                let val_vec = step.register_indexes;
                 let rs1 = step.instruction.op_b;
                 let rs2 = step.instruction.op_c;
                 let rd = step.instruction.op_a;
@@ -437,105 +434,33 @@ impl<F: FieldExt> RTypeGadget<F> {
                     1,
                     || Value::known(F::from(rd_value)),
                 )?;
+
                 match step.instruction.opcode.into() {
-                    Opcode::ADD => {
-                        let selector = self.s_add;
-                        selector.enable(&mut region, 0)?;
-                    }
-                    Opcode::SUB => {
-                        let selector = self.s_sub;
-                        selector.enable(&mut region, 0)?;
-                    }
-                    Opcode::SUBW => {
-                        let selector = self.s_subw;
-                        selector.enable(&mut region, 0)?;
-                    }
-                    Opcode::SLL => {
-                        let selector = self.s_sub;
-                        selector.enable(&mut region, 0)?;
-                    }
-                    Opcode::SRL => {
-                        let selector = self.s_sub;
-                        selector.enable(&mut region, 0)?;
-
-                    }
-                    Opcode::SRA => {
-                        let selector = self.s_sub;
-                        selector.enable(&mut region, 0)?;
-                    }
-                    Opcode::SLT => {
-                        let selector = self.s_sub;
-                        selector.enable(&mut region, 0)?;
-                    }
-                    Opcode::SLTU => {
-                        let selector = self.s_sub;
-                        selector.enable(&mut region, 0)?;
-                    }
-                    Opcode::XOR => {
-                        let selector = self.s_sub;
-                        selector.enable(&mut region, 0)?;
-                    }
-                    Opcode::OR => {
-                        let selector = self.s_sub;
-                        selector.enable(&mut region, 0)?;
-                    }
-                    Opcode::AND => {
-                        let selector = self.s_sub;
-                        selector.enable(&mut region, 0)?;
-                    }
-                    Opcode::MUL => {
-                        let selector = self.s_sub;
-                        selector.enable(&mut region, 0)?;
-                    }
-                    Opcode::MULH => {
-                        let selector = self.s_sub;
-                        selector.enable(&mut region, 0)?;
-                    }
-                    Opcode::MULHU => {
-                        let selector = self.s_sub;
-                        selector.enable(&mut region, 0)?;
-                    }
-                    Opcode::MULHSU => {
-                        let selector = self.s_sub;
-                        selector.enable(&mut region, 0)?;
-                    }
-                    Opcode::DIV => {
-                        let selector = self.s_sub;
-                        selector.enable(&mut region, 0)?;
-                    }
-                    Opcode::DIVU => {
-                        let selector = self.s_sub;
-                        selector.enable(&mut region, 0)?;
-                    }
-                    Opcode::REM => {
-                        let selector = self.s_sub;
-                        selector.enable(&mut region, 0)?;
-                    }
-                    Opcode::REMU => {
-                        let selector = self.s_sub;
-                        selector.enable(&mut region, 0)?;
-                    }
-                    Opcode::ADDW => {
-                        let selector = self.s_sub;
-                        selector.enable(&mut region, 0)?;
-                    }
-                    Opcode::SLLW => {
-                        let selector = self.s_sub;
-                        selector.enable(&mut region, 0)?;
-                    }
-                    Opcode::SRLW => {
-                        let selector = self.s_sub;
-                        selector.enable(&mut region, 0)?;
-                    }
-                    Opcode::SRAW => {
-                        let selector = self.s_sub;
-                        selector.enable(&mut region, 0)?;
-                    }
+                    Opcode::ADD => self.s_add.enable(&mut region, 0)?,
+                    Opcode::SUB => self.s_sub.enable(&mut region, 0)?,
+                    Opcode::SUBW => self.s_subw.enable(&mut region, 0)?,
+                    Opcode::SLL => self.s_sll.enable(&mut region, 0)?,
+                    Opcode::SRL => self.s_srl.enable(&mut region, 0)?,
+                    Opcode::SRA => self.s_sra.enable(&mut region, 0)?,
+                    Opcode::SLT => self.s_slt.enable(&mut region, 0)?,
+                    Opcode::SLTU => self.s_sltu.enable(&mut region, 0)?,
+                    Opcode::XOR => self.s_xor.enable(&mut region, 0)?,
+                    Opcode::OR => self.s_or.enable(&mut region, 0)?,
+                    Opcode::AND => self.s_and.enable(&mut region, 0)?,
+                    Opcode::MUL => self.s_mul.enable(&mut region, 0)?,
+                    Opcode::MULH => self.s_mulh.enable(&mut region, 0)?,
+                    Opcode::MULHU => self.s_mulhu.enable(&mut region, 0)?,
+                    Opcode::MULHSU => self.s_mulhsu.enable(&mut region, 0)?,
+                    Opcode::DIV => self.s_div.enable(&mut region, 0)?,
+                    Opcode::DIVU => self.s_divu.enable(&mut region, 0)?,
+                    Opcode::REM => self.s_rem.enable(&mut region, 0)?,
+                    Opcode::REMU => self.s_remu.enable(&mut region, 0)?,
+                    Opcode::ADDW => self.s_addw.enable(&mut region, 0)?,
+                    Opcode::SLLW => self.s_sllw.enable(&mut region, 0)?,
+                    Opcode::SRLW => self.s_srlw.enable(&mut region, 0)?,
+                    Opcode::SRAW => self.s_sraw.enable(&mut region, 0)?,
                     _ => panic!("Not implemented {:?}", step.instruction.opcode),
-
                 };
-                // todo: assign selector value to some position
-
                 Ok(())
             },
         )
