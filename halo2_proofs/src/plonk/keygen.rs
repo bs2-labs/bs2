@@ -235,7 +235,8 @@ where
     )?;
 
     let mut fixed = batch_invert_assigned(assembly.fixed);
-    let (cs, selector_polys, selector_assignments) = cs.compress_selectors(assembly.selectors.clone());
+    let (cs, selector_polys, selector_assignments) =
+        cs.compress_selectors(assembly.selectors.clone());
     fixed.extend(
         selector_polys
             .into_iter()
@@ -322,7 +323,8 @@ where
     )?;
 
     let mut fixed = batch_invert_assigned(assembly.fixed);
-    let (cs, selector_polys, selector_assignments) = cs.compress_selectors(assembly.selectors.clone());
+    let (cs, selector_polys, selector_assignments) =
+        cs.compress_selectors(assembly.selectors.clone());
     fixed.extend(
         selector_polys
             .into_iter()

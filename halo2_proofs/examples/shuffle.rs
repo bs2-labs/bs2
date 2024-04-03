@@ -1,3 +1,4 @@
+use core::iter;
 use ff::BatchInvert;
 use halo2_proofs::{
     arithmetic::{CurveAffine, FieldExt},
@@ -19,7 +20,6 @@ use halo2_proofs::{
     },
 };
 use rand_core::{OsRng, RngCore};
-use core::iter;
 
 fn rand_2d_array<F: FieldExt, R: RngCore, const W: usize, const H: usize>(
     rng: &mut R,

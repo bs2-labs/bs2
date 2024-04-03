@@ -1,8 +1,8 @@
-pub mod main_circuit;
 pub mod execution_table;
+pub mod main_circuit;
 
+use crate::main_circuit::MainCircuit;
 use halo2_proofs::{
-    dev::MockProver,
     halo2curves::bn256::{Bn256, Fr, G1Affine},
     plonk::{create_proof, keygen_pk, keygen_vk, verify_proof},
     poly::{
@@ -19,11 +19,9 @@ use halo2_proofs::{
 };
 use rand_core::SeedableRng;
 use rand_xorshift::XorShiftRng;
-use crate::main_circuit::MainCircuit;
 
 pub fn prove() {
     let degree = 4u32;
-
 
     let circuit = MainCircuit::<Fr>::new();
 

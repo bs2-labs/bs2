@@ -1,10 +1,10 @@
 use crate::execution_table::ExecutionTable;
 use entry_builder::entries::Entries;
-use halo2_proofs::arithmetic::{Field, FieldExt};
-use halo2_proofs::halo2curves::bn256::Fr;
+use halo2_proofs::arithmetic::FieldExt;
+
 use halo2_proofs::{
     circuit::{Layouter, SimpleFloorPlanner},
-    plonk::{Circuit, Column, ConstraintSystem, Error, Instance},
+    plonk::{Circuit, ConstraintSystem, Error},
 };
 use std::marker::PhantomData;
 
@@ -45,7 +45,7 @@ impl<F: FieldExt> MainCircuit<F> {
     }
 
     pub fn instance(&self) -> Vec<Vec<F>> {
-        let mut instance = Vec::new();
+        let instance = Vec::new();
 
         instance
     }

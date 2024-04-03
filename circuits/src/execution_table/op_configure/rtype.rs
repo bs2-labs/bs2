@@ -1,12 +1,11 @@
 use crate::execution_table::Entries;
 use core::marker::PhantomData;
-use std::iter::StepBy;
-use halo2_proofs::arithmetic::{FieldExt, Field};
-use halo2_proofs::circuit::{AssignedCell, Value, Layouter, SimpleFloorPlanner};
-use halo2_proofs::halo2curves::bn256::Fr;
+
+use halo2_proofs::arithmetic::FieldExt;
+use halo2_proofs::circuit::{AssignedCell, Layouter, Value};
+
 use halo2_proofs::plonk::*;
 use halo2_proofs::poly::Rotation;
-use runtime::trace::{Step, InstructionType, BType, IType, JType, NoType, RType, SType, UType};
 
 #[derive(Debug, Clone)]
 pub struct ACell<F: FieldExt>(pub AssignedCell<F, F>);
@@ -29,7 +28,6 @@ impl<F: FieldExt> RTypeGadget<F> {
         let s_sub = cs.selector();
         cs.enable_equality(lhs_col);
         cs.enable_equality(rhs_col);
-
 
         // todo: constrain selector: s1 + s1 + .. + sn = 1
         cs.create_gate("add", |vc| {
@@ -61,9 +59,8 @@ impl<F: FieldExt> RTypeGadget<F> {
         &self,
         layouter: &mut impl Layouter<F>,
         // step: &Step,
-        entries: &Entries,
+        _entries: &Entries,
     ) -> Result<(), Error> {
-
         layouter.assign_region(
             || "rtype",
             |mut region| {
@@ -81,19 +78,9 @@ impl<F: FieldExt> RTypeGadget<F> {
                 s_add.enable(&mut region, 0)?;
                 // s_sub.enable(&mut region, 0)?;
 
-                region.assign_advice(
-                    || "lhs",
-                    self.lhs_col,
-                    0,
-                    || Value::known(F::from(100)),
-                )?;
+                region.assign_advice(|| "lhs", self.lhs_col, 0, || Value::known(F::from(100)))?;
 
-                region.assign_advice(
-                    || "rhs",
-                    self.rhs_col,
-                    0,
-                    || Value::known(F::from(20)),
-                )?;
+                region.assign_advice(|| "rhs", self.rhs_col, 0, || Value::known(F::from(20)))?;
 
                 region.assign_advice(
                     || "output",
@@ -103,7 +90,7 @@ impl<F: FieldExt> RTypeGadget<F> {
                 )?;
 
                 Ok(())
-            }
+            },
         )
     }
 }

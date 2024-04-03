@@ -1,6 +1,6 @@
 use super::super::Gate;
-use halo2_proofs::{arithmetic::FieldExt, plonk::Expression};
 use core::marker::PhantomData;
+use halo2_proofs::{arithmetic::FieldExt, plonk::Expression};
 
 pub struct ScheduleGate<F: FieldExt>(PhantomData<F>);
 

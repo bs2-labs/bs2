@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod test {
     use crate::arithmetic::{eval_polynomial, FieldExt};
+    use crate::io::{Read, Write};
     use crate::plonk::Error;
     use crate::poly::commitment::ParamsProver;
     use crate::poly::commitment::{Blind, ParamsVerifier, MSM};
@@ -21,7 +22,6 @@ mod test {
     use group::{Curve, Group};
     use halo2curves::CurveAffine;
     use rand_core::{OsRng, RngCore};
-    use crate::io::{Read, Write};
 
     #[test]
     fn test_roundtrip_ipa() {

@@ -2,6 +2,7 @@
 #![allow(clippy::op_ref)]
 
 use assert_matches::assert_matches;
+use core::marker::PhantomData;
 use halo2_proofs::arithmetic::{Field, FieldExt};
 use halo2_proofs::circuit::{Cell, Layouter, SimpleFloorPlanner, Value};
 use halo2_proofs::dev::MockProver;
@@ -18,7 +19,6 @@ use halo2_proofs::transcript::{
     TranscriptWriterBuffer,
 };
 use rand_core::{OsRng, RngCore};
-use core::marker::PhantomData;
 
 #[test]
 fn plonk_api() {

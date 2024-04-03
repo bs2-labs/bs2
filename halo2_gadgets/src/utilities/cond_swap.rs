@@ -1,13 +1,13 @@
 //! Gadget and chip for a conditional swap utility.
 
 use super::{bool_check, ternary, UtilitiesInstructions};
+use core::marker::PhantomData;
 use halo2_proofs::{
     circuit::{AssignedCell, Chip, Layouter, Value},
     plonk::{Advice, Column, ConstraintSystem, Constraints, Error, Selector},
     poly::Rotation,
 };
 use halo2curves::FieldExt;
-use core::marker::PhantomData;
 
 /// Instructions for a conditional swap gadget.
 pub trait CondSwapInstructions<F: FieldExt>: UtilitiesInstructions<F> {

@@ -1,4 +1,6 @@
 use crate::collections::HashMap;
+use crate::helpers::{SerdeFormat, SerdePrimeField};
+use crate::io;
 use core::cmp::max;
 use core::ops::{Add, Mul};
 use core::{
@@ -6,8 +8,6 @@ use core::{
     ops::{Neg, Sub},
 };
 use ff::Field;
-use crate::helpers::{SerdeFormat, SerdePrimeField};
-use crate::io;
 
 use super::{lookup, permutation, Assigned, Error};
 use crate::dev::metadata;
@@ -1897,7 +1897,10 @@ impl<F: Field> ConstraintSystem<F> {
      * ckb-bf-zkvm:
      * Recreate side-effect of compress_selectors on the constraint system
      */
-    pub fn ckb_recreate_side_effect(mut self, selector_assignments: Vec<SelectorAssignment<F>>) -> Self {
+    pub fn ckb_recreate_side_effect(
+        mut self,
+        selector_assignments: Vec<SelectorAssignment<F>>,
+    ) -> Self {
         let mut selector_map = vec![None; selector_assignments.len()];
         let mut selector_replacements = vec![None; selector_assignments.len()];
         let mut new_columns = vec![];
@@ -1912,8 +1915,15 @@ impl<F: Field> ConstraintSystem<F> {
             selector_map[assignment.selector] = Some(new_columns[assignment.combination_index]);
         }
 
-        self.selector_map = selector_map.clone().into_iter().map(|a| a.unwrap()).collect::<Vec<_>>();
-        let selector_replacements = selector_replacements.into_iter().map(|a| a.unwrap()).collect::<Vec<_>>();
+        self.selector_map = selector_map
+            .clone()
+            .into_iter()
+            .map(|a| a.unwrap())
+            .collect::<Vec<_>>();
+        let selector_replacements = selector_replacements
+            .into_iter()
+            .map(|a| a.unwrap())
+            .collect::<Vec<_>>();
 
         fn replace_selectors<F: Field>(
             expr: &mut Expression<F>,
@@ -1950,11 +1960,12 @@ impl<F: Field> ConstraintSystem<F> {
 
         // Substitute non-simple selectors for the real fixed columns in all
         // lookup expressions
-        for expr in self
-            .lookups
-            .iter_mut()
-            .flat_map(|lookup| lookup.input_expressions.iter_mut().chain(lookup.table_expressions.iter_mut()))
-        {
+        for expr in self.lookups.iter_mut().flat_map(|lookup| {
+            lookup
+                .input_expressions
+                .iter_mut()
+                .chain(lookup.table_expressions.iter_mut())
+        }) {
             replace_selectors(expr, &selector_replacements, true);
         }
         self
@@ -1967,7 +1978,10 @@ impl<F: Field> ConstraintSystem<F> {
     /// find which fixed column corresponds with a given `Selector`.
     ///
     /// Do not call this twice. Yes, this should be a builder pattern instead.
-    pub(crate) fn compress_selectors(mut self, selectors: Vec<Vec<bool>>) -> (Self, Vec<Vec<F>>, Vec<SelectorAssignment<F>>) {
+    pub(crate) fn compress_selectors(
+        mut self,
+        selectors: Vec<Vec<bool>>,
+    ) -> (Self, Vec<Vec<F>>, Vec<SelectorAssignment<F>>) {
         // The number of provided selector assignments must be the number we
         // counted for this constraint system.
         assert_eq!(selectors.len(), self.num_selectors);

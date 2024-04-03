@@ -1,3 +1,4 @@
+use core::marker::PhantomData;
 use ff::Field;
 use halo2_proofs::{
     arithmetic::FieldExt,
@@ -7,7 +8,6 @@ use halo2_proofs::{
 };
 use halo2curves::pasta::Fp;
 use rand_core::OsRng;
-use core::marker::PhantomData;
 
 /// This represents an advice column at a certain row in the ConstraintSystem
 #[derive(Copy, Clone, Debug)]

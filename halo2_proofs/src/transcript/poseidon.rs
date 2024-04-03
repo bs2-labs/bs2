@@ -1,13 +1,13 @@
 use super::{Challenge255, EncodedChallenge, Transcript, TranscriptRead, TranscriptWrite};
 use crate::helpers::base_to_scalar;
 use crate::io::{self, Read, Write};
+use core::convert::TryInto;
+use core::marker::PhantomData;
 use ff::Field;
 use group::ff::PrimeField;
 use halo2curves::{Coordinates, CurveAffine, FieldExt};
 use num_bigint::BigUint;
 use poseidon::Poseidon;
-use core::convert::TryInto;
-use core::marker::PhantomData;
 
 const POSEIDON_RATE: usize = 8usize;
 const POSEIDON_T: usize = POSEIDON_RATE + 1usize;

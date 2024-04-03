@@ -3,14 +3,14 @@ use super::{
     util::{i2lebsp, lebs2ip},
     AssignedBits, BlockWord, SpreadInputs, SpreadVar, Table16Assignment, ROUNDS, STATE,
 };
+use core::convert::TryInto;
+use core::ops::Range;
 use halo2_proofs::{
     circuit::{Layouter, Value},
     plonk::{Advice, Column, ConstraintSystem, Error, Selector},
     poly::Rotation,
 };
 use halo2curves::pasta::pallas;
-use core::convert::TryInto;
-use core::ops::Range;
 
 mod compression_gates;
 mod compression_util;

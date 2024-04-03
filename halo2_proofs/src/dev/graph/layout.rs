@@ -1,11 +1,11 @@
+use crate::collections::HashSet;
+use core::cmp;
+use core::ops::Range;
 use ff::Field;
 use plotters::{
     coord::Shift,
     prelude::{DrawingArea, DrawingAreaErrorKind, DrawingBackend},
 };
-use core::cmp;
-use crate::collections::HashSet;
-use core::ops::Range;
 
 use crate::{
     circuit::{layouter::RegionColumn, Value},

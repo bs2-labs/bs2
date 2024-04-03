@@ -1,7 +1,7 @@
 use super::Expression;
-use crate::{format, vec, Vec};
 use crate::helpers::{SerdeFormat, SerdePrimeField};
 use crate::io;
+use crate::{format, vec, Vec};
 use ff::Field;
 
 /// This describes a selector and where it is activated.
@@ -57,7 +57,6 @@ impl<F: SerdePrimeField> SelectorAssignment<F> {
         })
     }
 }
-
 
 /// This function takes a vector that defines each selector as well as a closure
 /// used to allocate new fixed columns, and returns the assignment of each

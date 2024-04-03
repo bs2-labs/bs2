@@ -508,8 +508,11 @@ impl Entries {
             self.register_buffer = step.registers.clone();
             self.should_copy_registers = false;
         } else {
-            for (index, (left, right)) in
-                step.registers.iter().zip(self.register_buffer.clone()).enumerate()
+            for (index, (left, right)) in step
+                .registers
+                .iter()
+                .zip(self.register_buffer.clone())
+                .enumerate()
             {
                 assert_eq!(
                     *left, right,
@@ -566,7 +569,7 @@ mod tests {
         builder.build(&trace).expect("build entries failed");
 
         assert_eq!(
-            builder.rw_container.register_ops,
+            builder.entries.register_ops,
             vec![
                 RegisterOp {
                     global_clk: 0,
@@ -622,7 +625,7 @@ mod tests {
         builder.build(&trace).expect("build entries failed");
 
         assert_eq!(
-            builder.rw_container.register_ops,
+            builder.entries.register_ops,
             vec![
                 RegisterOp {
                     global_clk: 0,

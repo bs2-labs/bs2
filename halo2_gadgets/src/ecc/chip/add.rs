@@ -1,11 +1,11 @@
 use super::EccPoint;
+use crate::collections::HashSet;
 use halo2_proofs::{
     circuit::Region,
     plonk::{Advice, Assigned, Column, ConstraintSystem, Constraints, Error, Expression, Selector},
     poly::Rotation,
 };
 use halo2curves::{pasta::pallas, FieldExt};
-use crate::collections::HashSet;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Config {

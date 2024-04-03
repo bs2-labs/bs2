@@ -1,11 +1,9 @@
 use crate::execution_table::op_configure::rtype::RTypeGadget;
 use entry_builder::entries::Entries;
-use halo2_proofs::arithmetic::{Field, FieldExt};
-use halo2_proofs::halo2curves::bn256::Fr;
-use halo2_proofs::plonk::Column;
-use halo2_proofs::plonk::Instance;
+use halo2_proofs::arithmetic::FieldExt;
+
 use halo2_proofs::{
-    circuit::{Layouter, SimpleFloorPlanner},
+    circuit::Layouter,
     plonk::{Circuit, ConstraintSystem, Error},
 };
 use std::marker::PhantomData;

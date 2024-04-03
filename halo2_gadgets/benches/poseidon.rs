@@ -20,12 +20,12 @@ use halo2_proofs::{
 };
 use halo2curves::pasta::{pallas, vesta, EqAffine, Fp};
 
+use core::convert::TryInto;
+use core::marker::PhantomData;
 use halo2_gadgets::poseidon::{
     primitives::{self as poseidon, ConstantLength, Spec},
     Hash, Pow5Chip, Pow5Config,
 };
-use core::convert::TryInto;
-use core::marker::PhantomData;
 
 use criterion::{criterion_group, criterion_main, Criterion};
 use rand::rngs::OsRng;

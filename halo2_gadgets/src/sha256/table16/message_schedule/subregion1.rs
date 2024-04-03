@@ -1,11 +1,11 @@
 use super::super::{util::*, AssignedBits, BlockWord, SpreadVar, SpreadWord, Table16Assignment};
 use super::{schedule_util::*, MessageScheduleConfig};
+use core::convert::TryInto;
 use halo2_proofs::{
     circuit::{Region, Value},
     plonk::Error,
 };
 use halo2curves::pasta::pallas;
-use core::convert::TryInto;
 
 // A word in subregion 1
 // (3, 4, 11, 14)-bit chunks

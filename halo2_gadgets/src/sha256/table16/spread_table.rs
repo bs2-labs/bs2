@@ -1,4 +1,6 @@
 use super::{util::*, AssignedBits};
+use core::convert::TryInto;
+use core::marker::PhantomData;
 use halo2_proofs::{
     arithmetic::FieldExt,
     circuit::{Chip, Layouter, Region, Value},
@@ -6,8 +8,6 @@ use halo2_proofs::{
     poly::Rotation,
 };
 use halo2curves::pasta::pallas;
-use core::convert::TryInto;
-use core::marker::PhantomData;
 
 const BITS_7: usize = 1 << 7;
 const BITS_10: usize = 1 << 10;

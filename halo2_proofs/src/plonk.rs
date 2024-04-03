@@ -119,7 +119,9 @@ where
         let mut length = [0u8; 4];
         reader.read_exact(&mut length)?;
         let length = u32::from_be_bytes(length) as usize;
-        let selector_assignments = (0..length).map(|_| SelectorAssignment::read(reader).unwrap()).collect::<Vec<_>>();
+        let selector_assignments = (0..length)
+            .map(|_| SelectorAssignment::read(reader).unwrap())
+            .collect::<Vec<_>>();
         let cs = cs.ckb_recreate_side_effect(selector_assignments.clone());
 
         Ok(Self::from_parts(

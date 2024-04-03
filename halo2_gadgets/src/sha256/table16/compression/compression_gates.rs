@@ -1,9 +1,9 @@
 use super::super::{util::*, Gate};
+use core::marker::PhantomData;
 use halo2_proofs::{
     arithmetic::FieldExt,
     plonk::{Constraint, Constraints, Expression},
 };
-use core::marker::PhantomData;
 
 pub struct CompressionGate<F: FieldExt>(PhantomData<F>);
 

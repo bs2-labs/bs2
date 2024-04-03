@@ -1,6 +1,5 @@
 use runtime::trace::Instruction;
 
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OpStep {
     pub global_clk: u64,
