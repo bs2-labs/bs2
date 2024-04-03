@@ -11,11 +11,19 @@ use std::marker::PhantomData;
 pub mod op_configure;
 use op_configure::itype::ITypeGadget;
 use op_configure::rtype::RTypeGadget;
+use op_configure::utype::UTypeGadget;
+use op_configure::jtype::JTypeGadget;
+use op_configure::stype::STypeGadget;
+use op_configure::others::OthersOpGadget;
 
 #[derive(Clone)]
 pub struct ExecutionTable<F> {
     pub rtype: RTypeGadget<F>,
     pub itype: ITypeGadget<F>,
+    pub utype: UTypeGadget<F>,
+    pub jtype: JTypeGadget<F>,
+    pub stype: STypeGadget<F>,
+    pub others: OthersOpGadget<F>,
     _marker: PhantomData<F>,
 }
 
@@ -55,6 +63,10 @@ impl<F: FieldExt> ExecutionTable<F> {
                 s_rem, s_remu, s_addw, s_sllw, s_srlw, s_sraw
             ),
             itype: ITypeGadget::configure(cs, lhs_col, rhs_col, s_add, s_sub),
+            jtype: JTypeGadget::configure(cs, lhs_col, rhs_col, s_add, s_sub),
+            stype: STypeGadget::configure(cs, lhs_col, rhs_col, s_add, s_sub),
+            utype: UTypeGadget::configure(cs, lhs_col, rhs_col, s_add, s_sub),
+            others: OthersOpGadget::configure(cs, lhs_col, rhs_col, s_add, s_sub),
             _marker: PhantomData::default(),
         }
     }
@@ -63,14 +75,13 @@ impl<F: FieldExt> ExecutionTable<F> {
         let op_steps = entries.get_op_steps();
 
         for (_index, op_step) in op_steps.iter().enumerate() {
-            let instruction_type: InstructionType = op_step.instruction.opcode.into();
-            match instruction_type {
+            match op_step.instruction.opcode.into() {
                 InstructionType::BType(_) => self.rtype.assign(layouter, op_step),
                 InstructionType::IType(_) => self.itype.assign(layouter, op_step),
-                InstructionType::SType(_) => self.rtype.assign(layouter, op_step),
-                InstructionType::UType(_) => self.rtype.assign(layouter, op_step),
-                InstructionType::JType(_) => self.rtype.assign(layouter, op_step),
-                InstructionType::NoType(_) => self.rtype.assign(layouter, op_step),
+                InstructionType::SType(_) => self.stype.assign(layouter, op_step),
+                InstructionType::UType(_) => self.utype.assign(layouter, op_step),
+                InstructionType::JType(_) => self.jtype.assign(layouter, op_step),
+                InstructionType::NoType(_) => self.others.assign(layouter, op_step),
                 _ => {
                     unimplemented!("unimplement instruction type");
                 }

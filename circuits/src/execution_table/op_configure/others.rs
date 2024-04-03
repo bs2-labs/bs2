@@ -11,7 +11,7 @@ use halo2_proofs::poly::Rotation;
 pub struct ACell<F: FieldExt>(pub AssignedCell<F, F>);
 
 #[derive(Clone)]
-pub struct ITypeGadget<F> {
+pub struct OthersOpGadget<F> {
     pub lhs_col: Column<Advice>,
     pub rhs_col: Column<Advice>,
     s_add: Selector,
@@ -19,7 +19,7 @@ pub struct ITypeGadget<F> {
     _maker: PhantomData<F>,
 }
 
-impl<F: FieldExt> ITypeGadget<F> {
+impl<F: FieldExt> OthersOpGadget<F> {
     pub fn configure(
         cs: &mut ConstraintSystem<F>,
         lhs_col: Column<Advice>,
@@ -30,6 +30,7 @@ impl<F: FieldExt> ITypeGadget<F> {
         cs.enable_equality(lhs_col);
         cs.enable_equality(rhs_col);
 
+        // todo: constrain selector: s1 + s1 + .. + sn = 1
         cs.create_gate("add", |vc| {
             let lhs = vc.query_advice(lhs_col, Rotation::cur());
             let rhs = vc.query_advice(rhs_col, Rotation::cur());
@@ -57,7 +58,7 @@ impl<F: FieldExt> ITypeGadget<F> {
 
     pub fn assign(&self, layouter: &mut impl Layouter<F>, step: &OpStep) -> Result<(), Error> {
         layouter.assign_region(
-            || "itype",
+            || "other_type",
             |mut region| {
                 let s_add = self.s_add;
                 s_add.enable(&mut region, 0)?;
