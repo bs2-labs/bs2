@@ -53,6 +53,43 @@ pub struct MemoryOp {
     pub width: u8,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct RegisterOps {
+    pub ops: Vec<RegisterOp>,
+}
+
+impl RegisterOps {
+    pub fn new() -> Self {
+        Self { ops: Vec::new() }
+    }
+
+    pub fn global_clk(&self) -> Option<u64> {
+        self.ops.first().map(|op| op.global_clk)
+    }
+
+    pub fn push(&mut self, op: RegisterOp) {
+        if let Some(global_clk) = self.global_clk() {
+            assert_eq!(op.global_clk, global_clk);
+        }
+        self.ops.push(op);
+    }
+
+    pub fn read(&self, index: u64) -> Option<u64> {
+        self.ops
+            .iter()
+            .find(|op| op.index == index && op.rw.is_read())
+            .map(|op| op.value)
+    }
+
+    pub fn write(&self, index: u64) -> Option<u64> {
+        self.ops
+            .iter()
+            .rev()
+            .find(|op| op.index == index && op.rw.is_write())
+            .map(|op| op.value)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Entries {
     // TODO: this should be read from ELF file
@@ -62,7 +99,7 @@ pub struct Entries {
     /// Operations of memory for each global_clk
     pub memory_ops: HashMap<u64, MemoryOp>,
     /// Operations of register for each global_clk
-    pub register_ops: HashMap<u64, Vec<RegisterOp>>,
+    pub register_ops: HashMap<u64, RegisterOps>,
 
     /// Memory values to faciliate the memory operations
     /// Default to 32MB memory as ckb-vm may have flexible memory size.
@@ -133,7 +170,7 @@ impl Entries {
             value,
         };
 
-        self.register_ops.entry(gc).or_insert(vec![]).push(read_op);
+        self.register_ops.entry(gc).or_default().push(read_op);
         self.rwc += 1;
     }
 
@@ -148,7 +185,7 @@ impl Entries {
             index,
             value,
         };
-        self.register_ops.entry(gc).or_insert(vec![]).push(write_op);
+        self.register_ops.entry(gc).or_default().push(write_op);
         self.rwc += 1;
     }
 
