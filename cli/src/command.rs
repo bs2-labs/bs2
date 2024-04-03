@@ -16,8 +16,8 @@ pub enum Commands {
 
 #[derive(Args)]
 pub struct RunArgs {
-    // #[arg(short, long)]
-    // pub calldata: Option<String>,
+    #[arg(short, long)]
+    pub trace: Option<String>,
     // #[arg(short, long)]
     // pub bytecode: Option<String>,
     // #[arg(short, long)]
@@ -33,9 +33,10 @@ pub fn match_operation(cli: &Cli) {
         Commands::Run(_args) => {
             exec_run();
         }
-        Commands::Prove(_args) => {
+        Commands::Prove(args) => {
             println!("create proof");
-            prove();
+            let trace = args.trace.as_deref();
+            prove(trace.unwrap());
         }
     }
 }

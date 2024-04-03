@@ -48,14 +48,14 @@ mod tests {
 
     #[test]
     fn deserialize_trace() {
-        let steps = get_trace_from_file("trace.json");
+        let steps = get_trace_from_file("../trace.json");
         dbg!(&steps);
     }
 
     #[test]
     fn test_entry_builder() {
         let mut entry_builder = EntryBuilder::new();
-        let steps = get_trace_from_file("trace.json");
+        let steps = get_trace_from_file("../trace.json");
         let trace = Trace {
             cycles: 0,
             return_value: 0,

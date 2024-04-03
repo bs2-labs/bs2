@@ -1,8 +1,9 @@
 pub mod execution_table;
-pub mod memory_table;
 pub mod main_circuit;
+pub mod memory_table;
 
 use crate::main_circuit::MainCircuit;
+use entry_builder::builder::EntryBuilder;
 use halo2_proofs::{
     halo2curves::bn256::{Bn256, Fr, G1Affine},
     plonk::{create_proof, keygen_pk, keygen_vk, verify_proof},
@@ -20,11 +21,25 @@ use halo2_proofs::{
 };
 use rand_core::SeedableRng;
 use rand_xorshift::XorShiftRng;
+use runtime::trace::Step;
+use runtime::trace::Trace;
+use std::fs::File;
+use std::io::BufReader;
 
-pub fn prove() {
+pub fn prove(trace_path: &str) {
+    let mut entry_builder = EntryBuilder::new();
+    let steps = get_trace_from_file(trace_path);
+    let trace = Trace {
+        cycles: 0,
+        return_value: 0,
+        steps,
+    };
+    entry_builder.build(&trace).expect("build entry failed");
+    // dbg!(entry_builder.entries.get_op_steps());
+
     let degree = 4u32;
 
-    let circuit = MainCircuit::<Fr>::new();
+    let circuit = MainCircuit::<Fr>::init(entry_builder.entries);
 
     let mut rng = XorShiftRng::from_seed([
         0x59, 0x62, 0xbe, 0x5d, 0x76, 0x3d, 0x31, 0x8d, 0x17, 0xdb, 0x37, 0x32, 0x54, 0x06, 0xbc,
@@ -80,4 +95,11 @@ pub fn prove() {
     )
     .expect("failed to verify circuit");
     println!("Verify proof, elapsed {:?}", now.elapsed());
+}
+
+fn get_trace_from_file(path: &str) -> Vec<Step> {
+    let file = File::open(path).expect("open file");
+    let reader = BufReader::new(file);
+    let trace = serde_json::from_reader(reader).expect("read json");
+    trace
 }

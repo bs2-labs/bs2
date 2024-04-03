@@ -1,6 +1,6 @@
 use crate::execution_table::ExecutionTable;
 use crate::memory_table::MemoryTable;
-use entry_builder::entries::Entries;
+use entry_builder::entries::{self, Entries};
 use halo2_proofs::arithmetic::FieldExt;
 
 use halo2_proofs::{
@@ -33,7 +33,7 @@ impl<F: FieldExt> MainConfig<F> {
 
 #[derive(Default, Clone)]
 pub struct MainCircuit<F> {
-    entries: Entries,
+    pub entries: Entries,
     _marker: PhantomData<F>,
 }
 
@@ -41,6 +41,13 @@ impl<F: FieldExt> MainCircuit<F> {
     pub fn new() -> Self {
         Self {
             entries: Entries::default(),
+            _marker: PhantomData::default(),
+        }
+    }
+
+    pub fn init(entries: Entries) -> Self {
+        Self {
+            entries,
             _marker: PhantomData::default(),
         }
     }
