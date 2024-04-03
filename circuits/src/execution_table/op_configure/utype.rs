@@ -83,7 +83,7 @@ impl<F: FieldExt> UTypeGadget<F> {
                 )?;
 
                 match step.instruction.opcode.into() {
-                    Opcode::ADDI => self.s_lui.enable(&mut region, 0)?,
+                    Opcode::LUI => self.s_lui.enable(&mut region, 0)?,
                     _ => panic!("Not implemented {:?}", step.instruction.opcode),
                 };
                 Ok(())

@@ -83,7 +83,7 @@ impl<F: FieldExt> STypeGadget<F> {
                 )?;
 
                 match step.instruction.opcode.into() {
-                    Opcode::ADDI => self.s_sd.enable(&mut region, 0)?,
+                    Opcode::SD => self.s_sd.enable(&mut region, 0)?,
                     _ => panic!("Not implemented {:?}", step.instruction.opcode),
                 };
                 Ok(())

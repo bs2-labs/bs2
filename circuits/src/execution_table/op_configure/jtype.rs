@@ -83,7 +83,7 @@ impl<F: FieldExt> JTypeGadget<F> {
                 )?;
 
                 match step.instruction.opcode.into() {
-                    Opcode::ADDI => self.s_jal.enable(&mut region, 0)?,
+                    Opcode::JAL => self.s_jal.enable(&mut region, 0)?,
                     _ => panic!("Not implemented {:?}", step.instruction.opcode),
                 };
                 Ok(())

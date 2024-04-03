@@ -83,7 +83,7 @@ impl<F: FieldExt> OthersTypeGadget<F> {
                 )?;
 
                 match step.instruction.opcode.into() {
-                    Opcode::ADDI => self.s_fence.enable(&mut region, 0)?,
+                    Opcode::FENCE => self.s_fence.enable(&mut region, 0)?,
                     _ => panic!("Not implemented {:?}", step.instruction.opcode),
                 };
                 Ok(())

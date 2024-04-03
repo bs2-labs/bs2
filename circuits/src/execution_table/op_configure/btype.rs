@@ -83,7 +83,7 @@ impl<F: FieldExt> BTypeGadget<F> {
                 )?;
 
                 match step.instruction.opcode.into() {
-                    Opcode::ADDI => self.s_beq.enable(&mut region, 0)?,
+                    Opcode::BEQ => self.s_beq.enable(&mut region, 0)?,
                     _ => panic!("Not implemented {:?}", step.instruction.opcode),
                 };
                 Ok(())
