@@ -32,14 +32,14 @@ impl<F: FieldExt> STypeGadget<F> {
 
         // todo: constrain selector: s1 + s1 + .. + sn = 1
 
-        cs.create_gate("SType::SD", |vc| {
-            let lhs = vc.query_advice(lhs_col, Rotation::cur());
-            let rhs = vc.query_advice(rhs_col, Rotation::cur());
-            let out = vc.query_advice(lhs_col, Rotation::next());
-            let s = vc.query_selector(s_sd);
-            // let (value, _) = rs1_value.overflowing_sub(rs2_value);
-            vec![s * (lhs + rhs - out)]
-        });
+        // cs.create_gate("SType::SD", |vc| {
+        //     let lhs = vc.query_advice(lhs_col, Rotation::cur());
+        //     let rhs = vc.query_advice(rhs_col, Rotation::cur());
+        //     let out = vc.query_advice(lhs_col, Rotation::next());
+        //     let s = vc.query_selector(s_sd);
+        //     // let (value, _) = rs1_value.overflowing_sub(rs2_value);
+        //     vec![s * (lhs + rhs - out)]
+        // });
 
         Self {
             lhs_col,
