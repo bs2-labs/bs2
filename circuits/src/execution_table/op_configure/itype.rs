@@ -7,6 +7,8 @@ use halo2_proofs::circuit::{AssignedCell, Layouter, Value};
 use halo2_proofs::plonk::*;
 use halo2_proofs::poly::Rotation;
 
+use alloc::vec;
+
 #[derive(Debug, Clone)]
 pub struct ACell<F: FieldExt>(pub AssignedCell<F, F>);
 
@@ -38,7 +40,12 @@ impl<F: FieldExt> ITypeGadget<F> {
             let out = vc.query_advice(lhs_col, Rotation::next());
             let s_overflowing = vc.query_advice(s_overflowing, Rotation::cur());
             let s_addi = vc.query_selector(s_addi);
-            vec![s_addi * (lhs + rhs - out - s_overflowing * Expression::Constant(F::from(u64::max_value())))]
+            vec![
+                s_addi
+                    * (lhs + rhs
+                        - out
+                        - s_overflowing * Expression::Constant(F::from(u64::max_value()))),
+            ]
         });
 
         Self {
@@ -64,13 +71,11 @@ impl<F: FieldExt> ITypeGadget<F> {
                 let rs1 = step.instruction.op_b;
                 let imm = step.instruction.op_c;
 
-                dbg!(step, rd, rs1, imm);
                 let rd_value = step.register_indexes.unwrap().write(rd).unwrap();
                 let rs1_value = step.register_indexes.unwrap().read(rs1).unwrap();
 
                 let (_, is_overflowing) = rs1_value.overflowing_add(imm);
 
-                dbg!(rd_value, rs1_value);
                 region.assign_advice(
                     || "lhs",
                     self.lhs_col,
