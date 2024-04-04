@@ -3,12 +3,12 @@ use crate::memory_table::MemoryTable;
 use entry_builder::entries::{self, Entries};
 use halo2_proofs::arithmetic::FieldExt;
 
+use alloc::vec::Vec;
+use core::marker::PhantomData;
 use halo2_proofs::{
     circuit::{Layouter, SimpleFloorPlanner},
     plonk::{Circuit, ConstraintSystem, Error},
 };
-use core::marker::PhantomData;
-use alloc::vec::Vec;
 
 #[derive(Clone)]
 pub struct MainConfig<F> {
@@ -80,8 +80,6 @@ impl<F: FieldExt> Circuit<F> for MainCircuit<F> {
         config: Self::Config,
         mut layouter: impl Layouter<F>,
     ) -> Result<(), Error> {
-        log::debug!("assigning state_circuit");
-
         config.assign(&mut layouter, &self.entries);
 
         Ok(())

@@ -30,7 +30,7 @@ use rand_xorshift::XorShiftRng;
 use runtime::trace::Step;
 use runtime::trace::Trace;
 
-pub fn prove(steps: Vec<Step>) {
+pub fn prove(steps: Vec<Step>, rng: &mut XorShiftRng) {
     let mut entry_builder = EntryBuilder::new();
     let trace = Trace {
         cycles: 0,
@@ -52,12 +52,7 @@ pub fn prove(steps: Vec<Step>) {
 
     // -----
 
-    let mut rng = XorShiftRng::from_seed([
-        0x59, 0x62, 0xbe, 0x5d, 0x76, 0x3d, 0x31, 0x8d, 0x17, 0xdb, 0x37, 0x32, 0x54, 0x06, 0xbc,
-        0xe5,
-    ]);
-
-    let general_params = ParamsKZG::<Bn256>::setup(degree, &mut rng);
+    let general_params = ParamsKZG::<Bn256>::unsafe_setup(degree);
     let verifier_params: ParamsVerifierKZG<Bn256> = general_params.verifier_params().clone();
     // Initialize the proving key
     let vk = keygen_vk(&general_params, &circuit).expect("keygen_vk should not fail");
@@ -68,7 +63,7 @@ pub fn prove(steps: Vec<Step>) {
         KZGCommitmentScheme<Bn256>,
         ProverSHPLONK<'_, Bn256>,
         Challenge255<G1Affine>,
-        XorShiftRng,
+        &mut XorShiftRng,
         Blake2bWrite<Vec<u8>, G1Affine, Challenge255<G1Affine>>,
         MainCircuit<Fr>,
     >(

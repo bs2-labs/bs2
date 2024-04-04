@@ -4,13 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-log = "0.4.14"
-rand_core = "0.6.4"
+rand_core = { version = "0.6.0", features = ["std"] }
 rand_xorshift = "0.3"
-hex = "0.4.3"
-anyhow = "1.0"
-chrono = "0.4.23"
-serde_json = "1.0.66"
 
 halo2_proofs = { path = "../halo2_proofs" }
 entry_builder = { path = "../entry_builder" }
