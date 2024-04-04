@@ -2,6 +2,7 @@ use core::marker::PhantomData;
 use runtime::trace::Opcode;
 use entry_builder::op_step::OpStep;
 
+use alloc::vec;
 use halo2_proofs::arithmetic::FieldExt;
 use halo2_proofs::circuit::{AssignedCell, Layouter, Value};
 use halo2_proofs::plonk::*;

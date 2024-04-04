@@ -4,20 +4,28 @@
 #![feature(alloc_error_handler)]
 #![feature(panic_info_message)]
 
-use alloc::format;
-use ckb_bf_base::main_config::MyCircuit;
-use ckb_bf_base::utils::{read_verifier_params, DOMAIN};
+#[cfg(test)]
+extern crate alloc;
+
+
+#[cfg(not(test))]
+use ckb_std::default_alloc;
+#[cfg(not(test))]
+ckb_std::entry!(program_entry);
+#[cfg(not(test))]
+default_alloc!();
+
+use alloc::{format, vec::Vec};
+use circuits::main_circuit::MainCircuit;
+
 use ckb_std::{
     ckb_constants::Source,
-    default_alloc,
     syscalls::{debug, load_witness},
 };
 use halo2_gadgets::halo2curves::bn256::{Bn256, Fr, G1Affine};
 
-ckb_std::entry!(program_entry);
-default_alloc!();
-
 use halo2_proofs::{
+    helpers::SerdeCurveAffine,
     plonk::{verify_proof, VerifyingKey},
     poly::kzg::{
         commitment::{KZGCommitmentScheme, ParamsVerifierKZG},
@@ -25,8 +33,46 @@ use halo2_proofs::{
         strategy::SingleStrategy,
     },
     transcript::{Blake2bRead, Challenge255, TranscriptReadBuffer},
+    SerdeFormat,
 };
-use halo2curves::io;
+use halo2curves::{io, pairing::Engine};
+
+pub fn read_verifier_params<E: Engine, R: io::Read>(
+    reader: &mut R,
+) -> io::Result<ParamsVerifierKZG<E>>
+where
+    E::G1Affine: SerdeCurveAffine,
+    E::G2Affine: SerdeCurveAffine,
+{
+    const SHRINK_K: u32 = 1;
+    let shrink_k = SHRINK_K;
+    let mut k = [0u8; 4];
+    reader.read_exact(&mut k[..])?;
+    let k = u32::from_le_bytes(k);
+    let n = 1 << k;
+    let shrink_n = 1 << shrink_k;
+
+    let format = SerdeFormat::RawBytes;
+
+    let g = (0..shrink_n)
+        .map(|_| E::G1Affine::read(reader, format))
+        .collect::<Result<Vec<_>, _>>()?;
+    let g_lagrange = (0..shrink_n)
+        .map(|_| E::G1Affine::read(reader, format))
+        .collect::<Result<Vec<_>, _>>()?;
+
+    let g2 = E::G2Affine::read(reader, format)?;
+    let s_g2 = E::G2Affine::read(reader, format)?;
+
+    Ok(ParamsVerifierKZG {
+        k,
+        n: n as u64,
+        g,
+        g_lagrange,
+        g2,
+        s_g2,
+    })
+}
 
 pub fn program_entry() -> i8 {
     let mut params_buffer = [0u8; 1024];
@@ -79,7 +125,8 @@ pub fn program_entry() -> i8 {
     let mut code = [Fr::zero(); 1024];
     code[0] = Fr::from(code_len as u64);
     (0..code_len).for_each(|idx| {
-        code[idx + 1] = Fr::from(u16::from_le_bytes([code_buffer[idx * 2], code_buffer[idx * 2 + 1]]) as u64)
+        code[idx + 1] =
+            Fr::from(u16::from_le_bytes([code_buffer[idx * 2], code_buffer[idx * 2 + 1]]) as u64)
     });
 
     let mut input_buffer = [0u8; 1024];
@@ -96,20 +143,24 @@ pub fn program_entry() -> i8 {
     let mut input = [Fr::zero(); 1024];
     input[0] = Fr::from(input_len as u64);
     (0..input_len).for_each(|idx| {
-        input[idx+1] = Fr::from(input_buffer[idx] as u64);
+        input[idx + 1] = Fr::from(input_buffer[idx] as u64);
     });
 
     let verifier_params = {
-        let r: io::Result<ParamsVerifierKZG<Bn256>> = read_verifier_params(&mut &params_buffer[..params_len]);
+        let r: io::Result<ParamsVerifierKZG<Bn256>> =
+            read_verifier_params(&mut &params_buffer[..params_len]);
         if r.is_err() {
-            debug(format!("Error on ParamsVerifierKZG::<Bn256>::read: {:?}", r.err()));
+            debug(format!(
+                "Error on ParamsVerifierKZG::<Bn256>::read: {:?}",
+                r.err()
+            ));
             return -1;
         }
         r.unwrap()
     };
 
     let vk = {
-        let r = VerifyingKey::<G1Affine>::read::<&[u8], MyCircuit<Fr, DOMAIN>>(
+        let r = VerifyingKey::<G1Affine>::read::<&[u8], MainCircuit<Fr>>(
             &mut &vk_buffer[..vk_len],
             halo2_proofs::SerdeFormat::RawBytes,
         );
@@ -123,7 +174,8 @@ pub fn program_entry() -> i8 {
     // Prepare instances
     let instances = [&code[0..(code_len + 1)], &input[0..(input_len + 1)]];
 
-    let mut verifier_transcript = Blake2bRead::<_, G1Affine, Challenge255<_>>::init(&proof_buffer[..proof_len]);
+    let mut verifier_transcript =
+        Blake2bRead::<_, G1Affine, Challenge255<_>>::init(&proof_buffer[..proof_len]);
     let strategy = SingleStrategy::new(&verifier_params);
     let res = verify_proof::<
         KZGCommitmentScheme<Bn256>,
@@ -131,7 +183,13 @@ pub fn program_entry() -> i8 {
         Challenge255<G1Affine>,
         Blake2bRead<&[u8], G1Affine, Challenge255<G1Affine>>,
         SingleStrategy<'_, Bn256>,
-    >(&verifier_params, &vk, strategy, &[&instances], &mut verifier_transcript);
+    >(
+        &verifier_params,
+        &vk,
+        strategy,
+        &[&instances],
+        &mut verifier_transcript,
+    );
     if res.is_err() {
         debug(format!("Error on verify_proof: {:?}", res.err()));
         return -2;

@@ -5,7 +5,7 @@ use halo2_proofs::{
     plonk::{Circuit, ConstraintSystem, Error},
 };
 use runtime::trace::{InstructionType, Opcode};
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 pub mod op_configure;
 use op_configure::btype::BTypeGadget;

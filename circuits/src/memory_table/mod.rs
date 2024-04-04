@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use entry_builder::entries::Entries;
 use entry_builder::op_step::OpStep;
 use halo2_proofs::arithmetic::FieldExt;
@@ -10,7 +11,7 @@ use halo2_proofs::{
     plonk::{Circuit, ConstraintSystem, Error},
 };
 use runtime::trace::{InstructionType, Opcode};
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 #[derive(Clone)]
 pub struct MemoryTable<F> {

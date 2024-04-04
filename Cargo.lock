@@ -259,7 +259,26 @@ dependencies = [
  "rand_core",
  "rand_xorshift",
  "runtime",
+ "serde_json",
 ]
+
+[[package]]
+name = "bs2_verifier"
+version = "0.1.0"
+dependencies = [
+ "circuits",
+ "ckb-std",
+ "halo2",
+ "halo2_gadgets",
+ "halo2_proofs",
+ "halo2curves",
+]
+
+[[package]]
+name = "buddy-alloc"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3240a4cb09cf0da6a51641bd40ce90e96ea6065e3a1adc46434029254bcc2d09"
 
 [[package]]
 name = "bumpalo"
@@ -323,7 +342,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "chrono",
- "clap 4.2.1",
  "entry_builder",
  "halo2_proofs",
  "hex",
@@ -332,6 +350,26 @@ dependencies = [
  "rand_xorshift",
  "runtime",
  "serde_json",
+]
+
+[[package]]
+name = "ckb-standalone-types"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b5c776d70eb4f60a22a3180857646d77b2da8d33c0c4a063ad9f6610fc94609f"
+dependencies = [
+ "cfg-if 1.0.0",
+ "molecule",
+]
+
+[[package]]
+name = "ckb-std"
+version = "0.11.0"
+source = "git+https://github.com/nervosnetwork/ckb-std.git?rev=1b3fc3f#1b3fc3fc23dded4adc7c3a56f73659e29d7fc677"
+dependencies = [
+ "buddy-alloc",
+ "cc",
+ "ckb-standalone-types",
 ]
 
 [[package]]
@@ -570,6 +608,7 @@ dependencies = [
  "anyhow",
  "byteorder",
  "chrono",
+ "hashbrown 0.12.3",
  "hex",
  "log",
  "rand_core",
@@ -998,6 +1037,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "molecule"
+version = "0.7.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d4fd9767ab5e5f2ea40f71ff4c8bdb633c50509052e093c2fdd0e390a749dfa3"
+dependencies = [
+ "cfg-if 1.0.0",
+]
+
+[[package]]
 name = "nix"
 version = "0.23.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1356,15 +1404,7 @@ dependencies = [
 name = "runtime"
 version = "0.1.0"
 dependencies = [
- "anyhow",
- "chrono",
- "clap 4.2.1",
- "hex",
- "log",
- "rand_core",
- "rand_xorshift",
  "serde",
- "serde_json",
 ]
 
 [[package]]

@@ -1,6 +1,9 @@
+use std::{fs::File, io::BufReader};
+
 use crate::exec::run::exec_run;
 use circuits::prove;
 use clap::{command, Args, Parser, Subcommand};
+use runtime::trace::Step;
 
 #[derive(Parser)]
 pub struct Cli {
@@ -36,7 +39,15 @@ pub fn match_operation(cli: &Cli) {
         Commands::Prove(args) => {
             println!("create proof");
             let trace = args.trace.as_deref();
-            prove(trace.unwrap());
+            let steps = get_trace_from_file(trace.unwrap());
+            prove(steps);
         }
     }
+}
+
+fn get_trace_from_file(path: &str) -> Vec<Step> {
+    let file = File::open(path).expect("open file");
+    let reader = BufReader::new(file);
+    let trace = serde_json::from_reader(reader).expect("read json");
+    trace
 }
