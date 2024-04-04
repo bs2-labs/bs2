@@ -1,12 +1,12 @@
 use crate::{op_step::OpStep, Register};
 use alloc::{vec, vec::Vec};
-use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
+use byteorder::{ByteOrder, LittleEndian};
 use core::fmt::Error;
 use core::ops::Shr;
+use hashbrown::HashMap;
 use runtime::trace::{
     BType, IType, Instruction, InstructionType, JType, NoType, RType, SType, Step, UType,
 };
-use hashbrown::HashMap;
 
 /// Marker that defines whether an Operation performs a `READ` or a `WRITE`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -194,10 +194,10 @@ impl Entries {
     pub fn read_memory(&mut self, gc: u64, address: u64, width: u8) -> u64 {
         let mut reader = &self.memory_buffer[address as usize..];
         let value = match width {
-            8 => reader.read_u8().unwrap() as u64,
-            16 => reader.read_u16::<LittleEndian>().unwrap() as u64,
-            32 => reader.read_u32::<LittleEndian>().unwrap() as u64,
-            64 => reader.read_u64::<LittleEndian>().unwrap() as u64,
+            8 => reader[0] as u64,
+            16 => LittleEndian::read_u16(reader) as u64,
+            32 => LittleEndian::read_u32(reader) as u64,
+            64 => LittleEndian::read_u64(reader) as u64,
             _ => panic!("Not implemented {:?}", width),
         };
 
@@ -221,12 +221,13 @@ impl Entries {
             width,
         };
         self.memory_ops.insert(gc, write_op);
-        let mut writer = &mut self.memory_buffer[address as usize..];
+        let writer = &mut self.memory_buffer[address as usize..];
+
         match width {
-            8 => writer.write_u8(value as u8).unwrap(),
-            16 => writer.write_u16::<LittleEndian>(value as u16).unwrap(),
-            32 => writer.write_u32::<LittleEndian>(value as u32).unwrap(),
-            64 => writer.write_u64::<LittleEndian>(value as u64).unwrap(),
+            8 => writer[0] = value as u8,
+            16 => LittleEndian::write_u16(writer, value as u16),
+            32 => LittleEndian::write_u32(writer, value as u32),
+            64 => LittleEndian::write_u64(writer, value as u64),
             _ => panic!("Not implemented {:?}", width),
         }
     }
@@ -381,7 +382,6 @@ impl Entries {
             SType::SD => {
                 self.write_memory(step.global_clk, addr, value, 64);
             }
-            _ => panic!("Not implemented {:?}", step.instruction.opcode),
         }
         Ok(())
     }

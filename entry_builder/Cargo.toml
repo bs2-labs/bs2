@@ -4,17 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-log = "0.4.14"
-rand_core = "0.6.4"
-rand_xorshift = "0.3"
-hex = "0.4.3"
-anyhow = "1.0"
-chrono = "0.4.23"
-serde_json = "1.0.66"
-
 runtime = { path = "../runtime" }
-byteorder = "1.5.0"
+byteorder = { version = "1.5.0", default-features = false }
 hashbrown = "0.12.0"
+
+[dev-dependencies]
+serde_json = "1.0.66"
 
 [features]
 super = []
