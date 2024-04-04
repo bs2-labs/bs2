@@ -8,3 +8,5 @@ fn main() {
     let cli = Cli::parse();
     command::match_operation(&cli);
 }
+
+extern crate alloc;

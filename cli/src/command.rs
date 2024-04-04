@@ -4,8 +4,11 @@ use std::{fs::File, io::BufReader};
 
 use crate::exec::run::exec_run;
 use clap::{command, Args, Parser, Subcommand};
+use halo2_proofs::halo2curves::pairing::Engine;
+use halo2_proofs::helpers::SerdeCurveAffine;
 use halo2_proofs::plonk::VerifyingKey;
-use halo2_proofs::SerdeFormat;
+use halo2_proofs::poly::commitment::Params;
+use halo2_proofs::{io, SerdeFormat};
 use runtime::trace::Step;
 
 use circuits::main_circuit::MainCircuit;
@@ -29,6 +32,8 @@ use halo2_proofs::{
 use rand_core::SeedableRng;
 use rand_xorshift::XorShiftRng;
 use runtime::trace::Trace;
+
+pub const SHRINK_K: u32 = 1;
 
 #[derive(Parser)]
 pub struct Cli {
@@ -56,6 +61,42 @@ pub struct RunArgs {
     // // pub dry_run: bool,
 }
 
+pub fn read_verifier_params<E: Engine, R: io::Read>(
+    reader: &mut R,
+) -> io::Result<ParamsVerifierKZG<E>>
+where
+    E::G1Affine: SerdeCurveAffine,
+    E::G2Affine: SerdeCurveAffine,
+{
+    let shrink_k = SHRINK_K;
+    let mut k = [0u8; 4];
+    reader.read_exact(&mut k[..])?;
+    let k = u32::from_le_bytes(k);
+    let n = 1 << k;
+    let shrink_n = 1 << shrink_k;
+
+    let format = SerdeFormat::RawBytes;
+
+    let g = (0..shrink_n)
+        .map(|_| E::G1Affine::read(reader, format))
+        .collect::<Result<Vec<_>, _>>()?;
+    let g_lagrange = (0..shrink_n)
+        .map(|_| E::G1Affine::read(reader, format))
+        .collect::<Result<Vec<_>, _>>()?;
+
+    let g2 = E::G2Affine::read(reader, format)?;
+    let s_g2 = E::G2Affine::read(reader, format)?;
+
+    Ok(ParamsVerifierKZG {
+        k,
+        n: n as u64,
+        g,
+        g_lagrange,
+        g2,
+        s_g2,
+    })
+}
+
 pub fn prove(steps: Vec<Step>, rng: &mut XorShiftRng) {
     let mut entry_builder = EntryBuilder::new();
     let trace = Trace {
@@ -79,7 +120,21 @@ pub fn prove(steps: Vec<Step>, rng: &mut XorShiftRng) {
     // -----
 
     let general_params = ParamsKZG::<Bn256>::unsafe_setup(degree);
-    let verifier_params: ParamsVerifierKZG<Bn256> = general_params.verifier_params().clone();
+    let mut verifier_params: ParamsVerifierKZG<Bn256> = general_params.verifier_params().clone();
+    verifier_params.shrink(SHRINK_K);
+    let mut verifier_params_buf = alloc::vec![];
+    verifier_params
+        .write(&mut verifier_params_buf)
+        .expect("write");
+    println!("verifier parameters length : {}", verifier_params_buf.len());
+    let mut file = File::create("params.hex").expect("open file");
+    let vk_bytes_hex = hex::encode(&verifier_params_buf);
+    file.write(&vk_bytes_hex.as_bytes()).expect("write vk hex");
+
+    // check verification and serialization
+    let verifier_params: ParamsVerifierKZG<Bn256> =
+        read_verifier_params(&mut &verifier_params_buf[..verifier_params_buf.len()]).unwrap();
+
     // Initialize the proving key
     let vk = keygen_vk(&general_params, &circuit).expect("keygen_vk should not fail");
     let mut vk_bytes = vec![0u8; 1000];
