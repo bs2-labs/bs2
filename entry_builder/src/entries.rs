@@ -1,10 +1,12 @@
 use crate::{op_step::OpStep, Register};
+use alloc::{vec, vec::Vec};
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use core::fmt::Error;
+use core::ops::Shr;
 use runtime::trace::{
     BType, IType, Instruction, InstructionType, JType, NoType, RType, SType, Step, UType,
 };
-use std::{collections::HashMap, io::Cursor, ops::Shr};
+use hashbrown::HashMap;
 
 /// Marker that defines whether an Operation performs a `READ` or a `WRITE`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -123,10 +125,10 @@ impl Entries {
         self.pcs
             .iter()
             .map(|(global_clk, pc)| {
-                let r = self.register_ops.get(&global_clk);
-                let m = self.memory_ops.get(&global_clk);
+                let r = self.register_ops.get(global_clk);
+                let m = self.memory_ops.get(global_clk);
 
-                let instruction = self.pc_instructions.get(&pc).expect("get instructions");
+                let instruction = self.pc_instructions.get(pc).expect("get instructions");
 
                 OpStep {
                     global_clk: *global_clk,
@@ -190,7 +192,7 @@ impl Entries {
     }
 
     pub fn read_memory(&mut self, gc: u64, address: u64, width: u8) -> u64 {
-        let mut reader = Cursor::new(&self.memory_buffer[address as usize..]);
+        let mut reader = &self.memory_buffer[address as usize..];
         let value = match width {
             8 => reader.read_u8().unwrap() as u64,
             16 => reader.read_u16::<LittleEndian>().unwrap() as u64,
@@ -219,7 +221,7 @@ impl Entries {
             width,
         };
         self.memory_ops.insert(gc, write_op);
-        let mut writer = Cursor::new(&mut self.memory_buffer[address as usize..]);
+        let mut writer = &mut self.memory_buffer[address as usize..];
         match width {
             8 => writer.write_u8(value as u8).unwrap(),
             16 => writer.write_u16::<LittleEndian>(value as u16).unwrap(),
@@ -385,7 +387,6 @@ impl Entries {
     }
 
     pub fn step_itype(&mut self, itype: IType, step: &Step) -> Result<(), Error> {
-        dbg!(step);
         let rd_index = step.instruction.op_a;
         let rs1_index: usize = step.instruction.op_b as usize;
         let rs1 = step.registers[rs1_index];
@@ -569,7 +570,6 @@ impl Entries {
     }
 
     pub fn step(&mut self, step: &Step) -> Result<(), Error> {
-        dbg!(step);
         self.rwc = 0;
         let opcode = step.instruction.opcode;
         if self.should_copy_registers {

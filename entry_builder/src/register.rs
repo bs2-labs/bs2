@@ -1,6 +1,6 @@
-use std::cmp::min;
-use std::fmt::Display;
-use std::ops::{BitAnd, BitOr, BitXor, Not, Shl, Shr};
+use core::cmp::min;
+use core::fmt::Display;
+use core::ops::{BitAnd, BitOr, BitXor, Not, Shl, Shr};
 
 pub trait Register:
     Sized

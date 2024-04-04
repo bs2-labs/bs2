@@ -23,7 +23,6 @@ impl EntryBuilder {
         for (_index, step) in trace.steps.iter().enumerate() {
             // match step.instruction.opcode
             // TODO: store rw operations to container
-            dbg!(&self.entries.register_ops);
             self.entries.step(step)?;
         }
 
