@@ -54,40 +54,14 @@ impl<F: FieldExt> STypeGadget<F> {
             || "SType",
             |mut region| {
                 // todo
-                // let rs1 = step.instruction.op_b;
-                // let rs2 = step.instruction.op_c;
-                // let rd = step.instruction.op_a;
-                // let rs1_value = step.register_indexes.unwrap().read(rs1).unwrap();
-                // let rs2_value = step.register_indexes.unwrap().read(rs2).unwrap();
-                // let rd_value = step.register_indexes.unwrap().read(rd).unwrap();
 
-                // region.assign_advice(
-                //     || "lhs",
-                //     self.lhs_col,
-                //     0,
-                //     || Value::known(F::from(rs1_value)),
-                // )?;
+                match step.instruction.opcode.into() {
+                    Opcode::SD => self.s_sd.enable(&mut region, 0)?,
+                    _ => {
+                        // TODO: handle other opcodes
+                    },
+                };
 
-                // region.assign_advice(
-                //     || "rhs",
-                //     self.rhs_col,
-                //     0,
-                //     || Value::known(F::from(rs2_value)),
-                // )?;
-
-                // region.assign_advice(
-                //     || "output",
-                //     self.lhs_col,
-                //     1,
-                //     || Value::known(F::from(rd_value)),
-                // )?;
-
-                // match step.instruction.opcode.into() {
-                //     Opcode::SD => self.s_sd.enable(&mut region, 0)?,
-                //     _ => {
-                //         // TODO: handle other opcodes
-                //     },
-                // };
                 Ok(())
             },
         )

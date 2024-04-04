@@ -30,27 +30,36 @@ pub struct ExecutionTable<F> {
 
 impl<F: FieldExt> ExecutionTable<F> {
     pub fn configure(cs: &mut ConstraintSystem<F>) -> Self {
+        // Common 
         let lhs_col = cs.advice_column();
         let rhs_col = cs.advice_column();
+        let s_overflowing = cs.advice_column();
+
         // RType selector
         let s_add = cs.selector();
         let s_sub = cs.selector();
+        
         // BType selector
         let s_beq = cs.selector();
+
         // IType selector
         let s_addi = cs.selector();
+
         // JType selector
         let s_jal = cs.selector();
+
         // SType selector
         let s_sw = cs.selector();
+
         // UType selector
         let s_lui = cs.selector();
+
         // Others selector
         let s_lw = cs.selector();
 
         Self {
             btype: BTypeGadget::configure(cs, lhs_col, rhs_col, s_beq),
-            itype: ITypeGadget::configure(cs, lhs_col, rhs_col, s_addi),
+            itype: ITypeGadget::configure(cs, lhs_col, rhs_col, s_overflowing, s_addi),
             jtype: JTypeGadget::configure(cs, lhs_col, rhs_col, s_jal),
             rtype: RTypeGadget::configure(cs, lhs_col, rhs_col, s_add, s_sub),
             stype: STypeGadget::configure(cs, lhs_col, rhs_col, s_sw),

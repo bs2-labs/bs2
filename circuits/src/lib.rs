@@ -38,7 +38,7 @@ pub fn prove(trace_path: &str) {
     entry_builder.build(&trace).expect("build entry failed");
 
 
-    let degree = 14u32;
+    let degree = 12u32;
 
     let circuit = MainCircuit::<Fr>::init(entry_builder.entries);
 
