@@ -1,7 +1,11 @@
+use std::fmt::write;
+use std::io::Write;
 use std::{fs::File, io::BufReader};
 
 use crate::exec::run::exec_run;
 use clap::{command, Args, Parser, Subcommand};
+use halo2_proofs::plonk::VerifyingKey;
+use halo2_proofs::SerdeFormat;
 use runtime::trace::Step;
 
 use circuits::main_circuit::MainCircuit;
@@ -78,8 +82,27 @@ pub fn prove(steps: Vec<Step>, rng: &mut XorShiftRng) {
     let verifier_params: ParamsVerifierKZG<Bn256> = general_params.verifier_params().clone();
     // Initialize the proving key
     let vk = keygen_vk(&general_params, &circuit).expect("keygen_vk should not fail");
+    let mut vk_bytes = vec![0u8; 1000];
+
+    vk.write(&mut vk_bytes.as_mut_slice(), SerdeFormat::RawBytes)
+        .expect("write vk");
+    let mut file = File::create("vk.hex").expect("open file");
+    let vk_bytes_hex = hex::encode(&vk_bytes);
+    file.write(&vk_bytes_hex.as_bytes()).expect("write vk hex");
+
+    println!("{}", hex::encode(&vk_bytes));
+
+    VerifyingKey::<G1Affine>::read::<&[u8], MainCircuit<Fr>>(
+        &mut vk_bytes.as_slice(),
+        halo2_proofs::SerdeFormat::RawBytes,
+    )
+    .expect("Read vk");
+
     let pk = keygen_pk(&general_params, vk, &circuit).expect("keygen_pk should not fail");
     // Create a proof
+    let now = std::time::Instant::now();
+    println!("Begin create proof");
+
     let mut transcript = Blake2bWrite::<_, G1Affine, Challenge255<_>>::init(vec![]);
     create_proof::<
         KZGCommitmentScheme<Bn256>,
@@ -98,8 +121,14 @@ pub fn prove(steps: Vec<Step>, rng: &mut XorShiftRng) {
     )
     .expect("proof generation should not fail");
     let proof = transcript.finalize();
+    println!("Proof created, elapsed {:?}", now.elapsed());
+    println!("{}", hex::encode(&proof));
+    let mut file = File::create("proof.hex").expect("open file");
+    let proof_hex = hex::encode(&proof);
+    file.write(&proof_hex.as_bytes()).expect("write vk hex");
 
     // Begin verify proof
+    let now = std::time::Instant::now();
     let mut verifier_transcript = Blake2bRead::<_, G1Affine, Challenge255<_>>::init(&proof[..]);
     let strategy = SingleStrategy::new(&general_params);
 
@@ -117,6 +146,7 @@ pub fn prove(steps: Vec<Step>, rng: &mut XorShiftRng) {
         &mut verifier_transcript,
     )
     .expect("failed to verify circuit");
+    println!("Verify proof, elapsed {:?}", now.elapsed());
 }
 
 pub fn match_operation(cli: &Cli) {
