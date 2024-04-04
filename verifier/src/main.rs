@@ -7,8 +7,6 @@
 #[cfg(test)]
 extern crate alloc;
 
-use core::slice::SlicePattern;
-
 #[cfg(not(test))]
 use ckb_std::default_alloc;
 #[cfg(not(test))]
@@ -174,8 +172,6 @@ pub fn program_entry() -> i8 {
         0x4e, 0xb6, 0x5c, 0x19, 0xb0, 0x8a, 0x0a, 0xe0, 0x72, 0xba, 0xd1, 0x21, 0x36, 0x1e, 0x5a,
         0xb7, 0x91, 0x34, 0x37, 0x56, 0x0a, 0xf4, 0x29, 0x9f,
     ];
-    let proof_len = proof_buffer.len();
-
     let vk_bytes = [
         0x00, 0x00, 0x00, 0x0e, 0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -273,9 +269,9 @@ pub fn program_entry() -> i8 {
 
     // Prepare instances
     let mut verifier_transcript =
-        Blake2bRead::<_, G1Affine, Challenge255<_>>::init(proof_buffer.as_slice());
+        Blake2bRead::<_, G1Affine, Challenge255<_>>::init(&proof_buffer[..]);
     let strategy = SingleStrategy::new(&verifier_params);
-    let res = verify_proof::<
+    verify_proof::<
         KZGCommitmentScheme<Bn256>,
         VerifierSHPLONK<'_, Bn256>,
         Challenge255<G1Affine>,
@@ -285,13 +281,11 @@ pub fn program_entry() -> i8 {
         &verifier_params,
         &vk,
         strategy,
-        &[],
+        &[&[]],
         &mut verifier_transcript,
-    );
-    if res.is_err() {
-        debug(format!("Error on verify_proof: {:?}", res.err()));
-        return -2;
-    };
+    )
+    .expect("failed to verify circuit");
+
     debug(format!("Verifying successfully"));
     0
 }

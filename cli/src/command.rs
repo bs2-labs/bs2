@@ -1,5 +1,6 @@
 use std::fmt::write;
 use std::io::Write;
+use std::vec;
 use std::{fs::File, io::BufReader};
 
 use crate::exec::run::exec_run;
@@ -137,9 +138,9 @@ pub fn prove(steps: Vec<Step>, rng: &mut XorShiftRng) {
 
     // Initialize the proving key
     let vk = keygen_vk(&general_params, &circuit).expect("keygen_vk should not fail");
-    let mut vk_bytes = vec![0u8; 1000];
+    let mut vk_bytes = alloc::vec![];
 
-    vk.write(&mut vk_bytes.as_mut_slice(), SerdeFormat::RawBytes)
+    vk.write(&mut vk_bytes, SerdeFormat::RawBytes)
         .expect("write vk");
     let mut file = File::create("vk.hex").expect("open file");
     let vk_bytes_hex = hex::encode(&vk_bytes);
