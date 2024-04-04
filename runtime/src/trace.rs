@@ -1,6 +1,6 @@
+use alloc::{format, string::String, vec::Vec};
 use core::panic;
 use serde::{Deserialize, Serialize};
-use std::vec::Vec;
 
 // TODO: relay on ckb opcode
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -368,7 +368,7 @@ macro_rules! sub_enum {
             }
         }
 
-        impl std::convert::TryFrom<$super_enum_name> for $sub_enum_name {
+        impl TryFrom<$super_enum_name> for $sub_enum_name {
             type Error = ();
             fn try_from(val: $super_enum_name) -> Result<Self, Self::Error> {
                 match val {
