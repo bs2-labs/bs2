@@ -7,7 +7,6 @@
 #[cfg(test)]
 extern crate alloc;
 
-
 #[cfg(not(test))]
 use ckb_std::default_alloc;
 #[cfg(not(test))]

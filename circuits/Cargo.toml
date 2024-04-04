@@ -4,9 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-rand_core = { version = "0.6.0", features = ["std"] }
-rand_xorshift = "0.3"
-
 halo2_proofs = { path = "../halo2_proofs" }
 entry_builder = { path = "../entry_builder" }
 runtime = { path = "../runtime" }

@@ -340,16 +340,9 @@ dependencies = [
 name = "circuits"
 version = "0.1.0"
 dependencies = [
- "anyhow",
- "chrono",
  "entry_builder",
  "halo2_proofs",
- "hex",
- "log",
- "rand_core",
- "rand_xorshift",
  "runtime",
- "serde_json",
 ]
 
 [[package]]
@@ -605,14 +598,8 @@ checksum = "11157ac094ffbdde99aa67b23417ebdd801842852b500e395a45a9c0aac03e4a"
 name = "entry_builder"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "byteorder",
- "chrono",
  "hashbrown 0.12.3",
- "hex",
- "log",
- "rand_core",
- "rand_xorshift",
  "runtime",
  "serde_json",
 ]
